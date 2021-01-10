@@ -1,4 +1,4 @@
-# Copyright (C) 2020, Raffaello Bonghi <raffaello@rnext.it>
+# Copyright (C) 2021, Raffaello Bonghi <raffaello@rnext.it>
 # All rights reserved
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -23,38 +23,33 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from setuptools import setup
-# Launch command
-from os import path
-from glob import glob
+FROM ros:foxy-ros-base-l4t-r32.4.4
 
-package_name = 'nanosaur_robot'
-
-here = path.abspath(path.dirname(__file__))
-with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
-    requirements = f.read().splitlines()
-
-setup(
-    name=package_name,
-    version='0.1.0',
-    packages=[package_name],
-    data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name, ['requirements.txt']),
-        (path.join('share', package_name), glob('launch/*.py'))
-    ],
-    install_requires=requirements,
-    zip_safe=True,
-    maintainer='Raffaello Bonghi',
-    maintainer_email='raffaello@rnext.it',
-    description='Basic drivers for NanoSaur, motors and displays',
-    license='MIT',
-    tests_require=['pytest'],
-    entry_points={
-        'console_scripts': [
-            'nanosaur = nanosaur_robot.nanosaur:main'
-        ],
-    },
-)
+ENV ROS_WS /opt/ros_ws
+RUN mkdir -p $ROS_WS/src
+# Install gstream libraries
+RUN apt-get update && \
+    apt-get install -y libglew-dev glew-utils libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev libglib2.0-dev && \
+    rm -rf /var/lib/apt/lists/*
+# Install jetson-utils
+RUN cd /opt && \
+    git clone https://github.com/dusty-nv/jetson-utils.git && \
+    mkdir -p jetson-utils/build && cd jetson-utils/build && \
+    cmake ../ && \
+    make -j4 && make install && ldconfig
+# Change workdir
+WORKDIR $ROS_WS
+# Copy nanosaur project
+COPY . $ROS_WS/src/nanosaur
+# build ros package source
+RUN . /opt/ros/$ROS_DISTRO/install/setup.sh && \
+    colcon build --symlink-install \
+    --cmake-args \
+    -DCMAKE_BUILD_TYPE=Release
+# source ros package from entrypoint
+RUN sed --in-place --expression \
+      '$isource "$ROS_WS/install/setup.bash"' \
+      /ros_entrypoint.sh
+# run ros package launch file
+CMD ["ros2", "run", "nanosaur_camera", "nanosaur_camera"]
