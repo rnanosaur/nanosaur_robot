@@ -1,6 +1,6 @@
-# :sauropod: nanosaur
+# :sauropod: nanosaur_robot
 
-[![Docker Builder CI](https://github.com/rnanosaur/nanosaur/workflows/Docker%20Builder%20CI/badge.svg)](https://github.com/rnanosaur/nanosaur/actions?query=workflow%3A%22Docker+Builder+CI%22)
+[![Docker Builder CI](https://github.com/rnanosaur/nanosaur_robot/actions/workflows/docker-image.yml/badge.svg)](https://github.com/rnanosaur/nanosaur_robot/actions/workflows/docker-image.yml)
 
 NanoSaur is a little tracked robot ROS2 enabled, made for an NVIDIA Jetson Nano
 
@@ -9,41 +9,10 @@ NanoSaur is a little tracked robot ROS2 enabled, made for an NVIDIA Jetson Nano
 * For technical details follow [wiki](https://github.com/rnanosaur/nanosaur/wiki)
 * Something wrong? Open an [issue](https://github.com/rnanosaur/nanosaur/issues)
 
-## Install nanosaur system
+## Develop nanosaur system
 ```
 git clone https://github.com/rnanosaur/nanosaur.git
 sudo bash nanosaur/nanosaur_bringup/scripts/install.sh
-```
-
-After the installation please **reboot** the jetson board
-
-## Run nanosaur
-
-This script start the docker-compose
-
-```
-cd nanosaur/
-docker-compose up -d
-```
-
-# Develop
-
-This following part is to develop with nanosaur
-
-##  Build Docker
-
-Make ROS2 foxy jetson-container
-
-```
-git clone --branch patch-1 https://github.com/rbonghi/jetson-containers.git
-./jetson-containers/scripts/docker_build_ros.sh foxy
-```
-
-After foxy build, build the nanosaur docker for jetson
-
-```
-cd nanosaur
-docker build -f Dockerfile.dev -t nanosaur/nanosaur:latest .
 ```
 
 ## Run docker container
