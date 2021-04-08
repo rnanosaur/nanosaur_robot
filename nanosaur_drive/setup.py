@@ -1,4 +1,4 @@
-# Copyright (C) 2020, Raffaello Bonghi <raffaello@rnext.it>
+# Copyright (C) 2021, Raffaello Bonghi <raffaello@rnext.it>
 # All rights reserved
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@ from setuptools import setup
 from os import path
 from glob import glob
 
-package_name = 'nanosaur_robot'
+package_name = 'nanosaur_drive'
 
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
@@ -54,7 +54,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'nanosaur = nanosaur_robot.nanosaur:main'
+            'nanosaur = nanosaur_drive.nanosaur:main'
         ],
     },
 )
