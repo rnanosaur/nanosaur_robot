@@ -35,8 +35,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    <license>MIT</license>
 
    <url type="website">https://nanosaur.ai/</url>
-   <url type="repository">https://github.com/rnanosaur/nanosaur</url>
-   <url type="bugtracker">https://github.com/rnanosaur/nanosaur/issues</url>
+   <url type="repository">https://github.com/rnanosaur/nanosaur_robot</url>
+   <url type="bugtracker">https://github.com/rnanosaur/nanosaur_robot/issues</url>
 
    <buildtool_depend>ament_cmake</buildtool_depend>
 
@@ -44,7 +44,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    <test_depend>ament_lint_common</test_depend>
 
    <exec_depend>robot_state_publisher</exec_depend>
-   <exec_depend>nanosaur_drive</exec_depend>
+   <exec_depend>nanosaur_hardware</exec_depend>
    <exec_depend>nanosaur_camera</exec_depend>
    <exec_depend>nanosaur_description</exec_depend>
 

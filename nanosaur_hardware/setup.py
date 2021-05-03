@@ -28,7 +28,7 @@ from setuptools import setup
 from os import path
 from glob import glob
 
-package_name = 'nanosaur_drive'
+package_name = 'nanosaur_hardware'
 
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
@@ -54,7 +54,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'nanosaur = nanosaur_drive.nanosaur:main'
+            'nanosaur = nanosaur_hardware.nanosaur:main'
         ],
     },
 )
