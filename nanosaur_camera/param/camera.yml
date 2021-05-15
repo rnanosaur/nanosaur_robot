@@ -30,6 +30,6 @@ nanosaur_camera:
 
     camera:
       device: "0"
-      frameRate: 15.0
-      width: 640
-      height: 480
+      frameRate: 60.0
+      width: 1280
+      height: 720
