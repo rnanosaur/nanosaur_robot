@@ -19,6 +19,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(camera_info_manager REQUIRED)
 
 find_package(jetson-utils REQUIRED)
 find_package(CUDA REQUIRED)
@@ -35,7 +36,7 @@ include_directories(
     ${GSTREAMER_INCLUDE_DIRS}
 )
 add_executable(nanosaur_camera src/camera_publisher.cpp src/image_converter.cpp)
-ament_target_dependencies(nanosaur_camera rclcpp std_msgs sensor_msgs)
+ament_target_dependencies(nanosaur_camera rclcpp std_msgs sensor_msgs camera_info_manager)
 target_link_libraries(nanosaur_camera jetson-utils ${GSTREAMER_LIBRARIES})
 
 install(

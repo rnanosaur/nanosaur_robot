@@ -34,6 +34,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/msg/image.hpp>
+#include <camera_info_manager/camera_info_manager.hpp>
 #include <jetson-utils/gstCamera.h>
 
 #include "nanosaur_camera/image_converter.h"
@@ -54,7 +55,8 @@ public:
     this->get_parameter("frame_id", frameId);
     RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
     // Initialize publisher
-    publisher_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+    camera_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+    info_pub_ = create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", 10);
     // Initialize camera
     std::string camera_device = "0";	// MIPI CSI camera by default
     this->declare_parameter<std::string>("camera.device", camera_device);
@@ -106,6 +108,7 @@ public:
     }
     // populate the message
     sensor_msgs::msg::Image msg;
+    sensor_msgs::msg::CameraInfo ci;
 
     if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, imgRGBA) )
     {
@@ -115,8 +118,14 @@ public:
     // Add header,timestamp and frame_id
     msg.header.stamp = this->get_clock()->now();
     msg.header.frame_id = frameId;
-    // Publish camera frame message
-    publisher_->publish(msg);
+    // Build camera info message
+    ci.height = msg.height;
+    ci.width = msg.width;
+    ci.header.stamp = msg.header.stamp;
+
+    // Publish camera frame message and camera info
+    camera_pub_->publish(std::move(msg));
+    info_pub_->publish(std::move(ci));
     RCLCPP_DEBUG(this->get_logger(), "Published camera frame");
     return true;
   }
@@ -131,7 +140,8 @@ public:
 private:
   gstCamera* camera;
   imageConverter* camera_cvt;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr camera_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
   std::string frameId;
 };
 
