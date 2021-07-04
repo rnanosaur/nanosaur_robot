@@ -11,6 +11,10 @@ jobs:
     name: "Notify"
     runs-on: ubuntu-latest #self-hosted
     steps:
-    - name: Notify
-      run: |
-        curl -XPOST -u "${{ secrets.API_TOKEN_USERNAME}}:${{secrets.API_TOKEN_GITHUB}}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/rnanosaur/nanosaur/actions/workflows/docker-image.yml/dispatches --data '{"ref": "master"}'
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=short_ref::${GITHUB_REF#refs/*/}
+      - name: Notify
+        run: |
+          echo ${{ steps.vars.outputs.short_ref }}
+          curl -XPOST -u "${{ secrets.API_TOKEN_USERNAME}}:${{secrets.API_TOKEN_GITHUB}}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/rnanosaur/nanosaur/actions/workflows/docker-image.yml/dispatches --data '{"ref": "${{ steps.vars.outputs.short_ref }}"}'
