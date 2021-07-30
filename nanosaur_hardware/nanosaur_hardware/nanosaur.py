@@ -66,35 +66,38 @@ class NanoSaur(Node):
         right_bus = int(self.get_parameter("display/right/bus").value)
         self.declare_parameter("display/right/address", 0x3C)
         right_address = int(self.get_parameter("display/right/address").value)
-        self.get_logger().debug(f"Display right bus={right_bus} adr={right_address}")
-        self.display_right = Display(self, i2c_bus=right_bus, i2c_address=right_address)
-        # Initialize left Display controller
         self.declare_parameter("display/left/bus", 1)
         left_bus = int(self.get_parameter("display/left/bus").value)
         self.declare_parameter("display/left/address", 0x3C)
         left_address = int(self.get_parameter("display/left/address").value)
-        self.get_logger().debug(f"Display left bus={left_bus} adr={left_address}")
+        # Message configuration
+        self.get_logger().info(f"Display left bus={left_bus} adr={left_address}")
+        self.get_logger().info(f"Display right bus={right_bus} adr={right_address}")
+        # Initialize Displays controller
         self.display_left = Display(self, i2c_bus=left_bus, i2c_address=left_address)
+        self.display_right = Display(self, i2c_bus=right_bus, i2c_address=right_address)
         # Get rate joint_states
         self.declare_parameter("rate", 5)
         self.timer_period = 1. / float(self.get_parameter("rate").value)
-        self.get_logger().debug(f"timer {self.timer_period}")
         # Get RPM motors
-        self.declare_parameter("rpm")
-        self.rpm = self.get_parameter("rpm").value
-        self.get_logger().debug(f"RPM motors {self.rpm}")
+        self.declare_parameter("rpm", 150)
+        self.rpm = int(self.get_parameter("rpm").value)
         # Get parameter left wheel name
         # https://index.ros.org/doc/ros2/Tutorials/Using-Parameters-In-A-Class-Python/
-        self.declare_parameter("left_wheel")
-        self.left_wheel_name = self.get_parameter("left_wheel").value
-        self.get_logger().debug(f"Right wheel name: {self.left_wheel_name}")
+        self.declare_parameter("motor/left/channel", 1)
+        left_id = int(self.get_parameter("motor/left/channel").value)
+        self.declare_parameter("motor/left/wheel", "sprocket_left_joint")
+        self.left_wheel_name = self.get_parameter("motor/left/wheel").value
         # Get parameter right wheel name
-        self.declare_parameter("right_wheel")
-        self.right_wheel_name = self.get_parameter("right_wheel").value
-        self.get_logger().debug(f"Left wheel name: {self.right_wheel_name}")
+        self.declare_parameter("motor/right/channel", 4)
+        right_id = int(self.get_parameter("motor/right/channel").value)
+        self.declare_parameter("motor/right/wheel", "sprocket_right_joint")
+        self.right_wheel_name = self.get_parameter("motor/right/wheel").value
+        # Motor info message
+        self.get_logger().info(f"RPM motors {self.rpm} - timer {self.timer_period}")
+        self.get_logger().info(f"Motor left: Channel {left_id} - Wheel {self.left_wheel_name}")
+        self.get_logger().info(f"Motor Right: Channel {right_id} - Wheel {self.right_wheel_name}")
         # Load motors
-        left_id = 1
-        right_id = 2
         self.mright = Motor(right_id, self.rpm)
         self.mleft = Motor(left_id, self.rpm)
         # Load subscriber robot_description

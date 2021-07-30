@@ -26,18 +26,4 @@
 nanosaur:
   ros__parameters:
 
-    left_wheel: sprocket_left_joint
-    right_wheel: sprocket_right_joint
-    
-    # Speed in RPM
-    rpm: 150
-
-    # Motors configuration
-    motor_left:
-      channel: 1
-      alpha: 1.0
-      beta: 0.0
-    motor_right:
-      channel: 2
-      alpha: 1.0
-      beta: 0.0
+    test: "test"
