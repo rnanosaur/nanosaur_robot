@@ -43,7 +43,7 @@ def generate_launch_description():
         default=os.path.join(pkg_bringup, 'param', 'nanosaur.yml'))
 
     nanosaur_node = launch_ros.actions.Node(
-        package='nanosaur_hardware',
+        package='nanosaur_base',
         executable='nanosaur',
         name='nanosaur',
         parameters=[nanosaur_dir],

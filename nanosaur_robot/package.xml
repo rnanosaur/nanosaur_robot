@@ -42,7 +42,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   <exec_depend>nanosaur_bringup</exec_depend>
   <exec_depend>nanosaur_camera</exec_depend>
-  <exec_depend>nanosaur_hardware</exec_depend>
+  <exec_depend>nanosaur_base</exec_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

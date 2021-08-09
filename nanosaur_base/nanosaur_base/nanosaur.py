@@ -70,11 +70,10 @@ class NanoSaur(Node):
         left_bus = int(self.get_parameter("display/left/bus").value)
         self.declare_parameter("display/left/address", 0x3C)
         left_address = int(self.get_parameter("display/left/address").value)
-        # Message configuration
-        self.get_logger().info(f"Display left bus={left_bus} adr={left_address}")
-        self.get_logger().info(f"Display right bus={right_bus} adr={right_address}")
         # Initialize Displays controller
+        self.get_logger().info(f"Display left bus={left_bus} adr={left_address}")
         self.display_left = Display(self, i2c_bus=left_bus, i2c_address=left_address)
+        self.get_logger().info(f"Display right bus={right_bus} adr={right_address}")
         self.display_right = Display(self, i2c_bus=right_bus, i2c_address=right_address)
         # Get rate joint_states
         self.declare_parameter("rate", 5)

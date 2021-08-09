@@ -44,7 +44,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    <test_depend>ament_lint_common</test_depend>
 
    <exec_depend>robot_state_publisher</exec_depend>
-   <exec_depend>nanosaur_hardware</exec_depend>
+   <exec_depend>nanosaur_base</exec_depend>
    <exec_depend>nanosaur_camera</exec_depend>
    <exec_depend>nanosaur_description</exec_depend>
 

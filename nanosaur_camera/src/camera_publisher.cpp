@@ -34,7 +34,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/msg/image.hpp>
-#include <jetson-utils/gstCamera.h>
+#include <jetson-utils/videoSource.h>
 
 #include "nanosaur_camera/image_converter.h"
 
@@ -61,45 +61,70 @@ public:
     this->get_parameter("camera.device", camera_device);
     RCLCPP_INFO(this->get_logger(), "opening camera device %s", camera_device.c_str());
     // Load configuration
-    double frameRate = 120.0;
+    double frameRate = 15.0;
     this->declare_parameter<double>("camera.frameRate", frameRate);
     this->get_parameter("camera.frameRate", frameRate);
-    int camera_width = gstCamera::DefaultWidth;
+    int camera_width = 320; //gstCamera::DefaultWidth;
     this->declare_parameter<int>("camera.width", camera_width);
     this->get_parameter("camera.width", camera_width);
-    int camera_height = gstCamera::DefaultHeight;
+    int camera_height = 240; //gstCamera::DefaultHeight;
     this->declare_parameter<int>("camera.height", camera_height);
     this->get_parameter("camera.height", camera_height);
 
     RCLCPP_INFO(this->get_logger(), "width %d height %d - Framerate %f", camera_width, camera_height, frameRate);
 
-    videoOptions opt;
-    opt.resource = camera_device.c_str();
-    opt.width = camera_width;
-    opt.height = camera_height;
-    opt.frameRate = (float)frameRate;
-    opt.ioType = videoOptions::INPUT;
+    videoOptions video_options;
+
+    //video_options.resource = camera_device.c_str();
+
+    std::string codec_str = "unknown";
+    std::string flip_str = "";
+
+    if( codec_str.size() != 0 )
+      video_options.codec = videoOptions::CodecFromStr(codec_str.c_str());
+
+    if( flip_str.size() != 0 )
+      video_options.flipMethod = videoOptions::FlipMethodFromStr(flip_str.c_str());
+
+    video_options.width = camera_width;
+    video_options.height = camera_height;
+    video_options.frameRate = (float)frameRate;
+    video_options.loop = 0;
+    //video_options.ioType = videoOptions::INPUT;
 
     /* open camera device */
-	  camera = gstCamera::Create(opt);
+    camera = videoSource::Create(camera_device.c_str(), video_options);
 
     if( !camera )
     {
       RCLCPP_ERROR(this->get_logger(), "failed to open camera device %s", camera_device.c_str());
     }
+
+    /*
+    * start the camera streaming
+    */
+    if( !camera->Open() )
+    {
+      RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
+    }
+  }
+
+  bool isStreaming()
+  {
+    return camera->IsStreaming();
   }
 
   bool acquire()
   {
-    float4* imgRGBA = NULL;
+    imageConverter::PixelType* nextFrame = NULL;
     // get the latest frame
-    if( !camera->CaptureRGBA((float**)&imgRGBA, 1000) )
+    if( !camera->Capture(&nextFrame, 1000) )
     {
       RCLCPP_ERROR(this->get_logger(), "failed to capture camera frame");
       return false;
     }
     // assure correct image size
-    if( !camera_cvt->Resize(camera->GetWidth(), camera->GetHeight(), IMAGE_RGBA32F) )
+    if( !camera_cvt->Resize(camera->GetWidth(), camera->GetHeight(), imageConverter::ROSOutputFormat) )
     {
       RCLCPP_ERROR(this->get_logger(), "failed to resize camera image converter");
       return false;
@@ -107,7 +132,7 @@ public:
     // populate the message
     sensor_msgs::msg::Image msg;
 
-    if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, imgRGBA) )
+    if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, nextFrame) )
     {
       RCLCPP_ERROR(this->get_logger(), "failed to convert camera frame to sensor_msgs::Image");
       return false;
@@ -129,7 +154,7 @@ public:
   }
 
 private:
-  gstCamera* camera;
+  videoSource* camera;
   imageConverter* camera_cvt;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
   std::string frameId;

@@ -28,8 +28,8 @@ nanosaur_camera:
 
     frame_id: 'camera_optical_frame'
 
-    camera:
-      device: "0"
-      frameRate: 60.0
-      width: 1280
-      height: 720
+    #camera:
+    #  device: "0"
+    #  frameRate: 60.0
+    #  width: 1280
+    #  height: 720
