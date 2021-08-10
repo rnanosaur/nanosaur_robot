@@ -42,11 +42,18 @@ def generate_launch_description():
         'nanosaur_dir',
         default=os.path.join(pkg_bringup, 'param', 'nanosaur.yml'))
 
-    nanosaur_node = launch_ros.actions.Node(
+    nanosaur_base_node = launch_ros.actions.Node(
         package='nanosaur_base',
-        executable='nanosaur',
+        executable='nanosaur_base',
         name='nanosaur',
         parameters=[nanosaur_dir],
+        output='screen'
+    )
+
+    nanosaur_camera_node = launch_ros.actions.Node(
+        package='nanosaur_camera',
+        executable='nanosaur_camera',
+        name='nanosaur_camera',
         output='screen'
     )
 
@@ -60,11 +67,10 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [pkg_description, '/launch/description.launch.py'])),
-        # Camera launch
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [pkg_camera, '/launch/camera.launch.py'])),
-        # Launch nanusaur driver
-        nanosaur_node
+
+        # Nanosaur camera
+        nanosaur_camera_node,
+        # Nanusaur driver motors and display
+        nanosaur_base_node
     ])
 # EOF

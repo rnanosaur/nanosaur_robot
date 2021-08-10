@@ -32,147 +32,124 @@
 #include <functional>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/msg/image.hpp>
-#include <jetson-utils/videoSource.h>
+#include "nanosaur_camera/camera_publisher.h"
 
-#include "nanosaur_camera/image_converter.h"
-
+#ifdef gts_default
+  #define CAMERA_WIDTH gstCamera::DefaultWidth
+  #define CAMERA_HEIGHT gstCamera::DefaultHeight
+  #define CAMERA_FRAMERATE 120.0
+#else
+  #define CAMERA_WIDTH 320
+  #define CAMERA_HEIGHT 240
+  #define CAMERA_FRAMERATE 15.0
+#endif
 
 using namespace std::chrono_literals;
 
-
-class CameraPublisher : public rclcpp::Node
+CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_optical_frame")
 {
-public:
-  CameraPublisher() : Node("camera_publisher"), frameId("base_link")
+  /* create image converter */
+  camera_cvt = new imageConverter();
+  // Load frame_id name
+  this->declare_parameter<std::string>("frame_id", frameId);
+  this->get_parameter("frame_id", frameId);
+  RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
+  // Initialize publisher
+  publisher_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+  // Initialize camera
+  std::string camera_device = "0";	// MIPI CSI camera by default
+  this->declare_parameter<std::string>("camera.device", camera_device);
+  this->get_parameter("camera.device", camera_device);
+  RCLCPP_INFO(this->get_logger(), "opening camera device %s", camera_device.c_str());
+  // Load configuration
+  double frameRate = CAMERA_FRAMERATE;
+  this->declare_parameter<double>("camera.frameRate", frameRate);
+  this->get_parameter("camera.frameRate", frameRate);
+  int camera_width = CAMERA_WIDTH;
+  this->declare_parameter<int>("camera.width", camera_width);
+  this->get_parameter("camera.width", camera_width);
+  int camera_height = CAMERA_HEIGHT;
+  this->declare_parameter<int>("camera.height", camera_height);
+  this->get_parameter("camera.height", camera_height);
+
+  RCLCPP_INFO(this->get_logger(), "width %d height %d - Framerate %f", camera_width, camera_height, frameRate);
+
+  videoOptions video_options;
+
+  std::string codec_str = "unknown";
+  std::string flip_str = "";
+
+  if( codec_str.size() != 0 )
+    video_options.codec = videoOptions::CodecFromStr(codec_str.c_str());
+
+  if( flip_str.size() != 0 )
+    video_options.flipMethod = videoOptions::FlipMethodFromStr(flip_str.c_str());
+
+  video_options.width = camera_width;
+  video_options.height = camera_height;
+  video_options.frameRate = (float)frameRate;
+  video_options.loop = 0;
+  //video_options.ioType = videoOptions::INPUT;
+
+  /* open camera device */
+  camera = videoSource::Create(camera_device.c_str(), video_options);
+
+  if( !camera )
   {
-    /* create image converter */
-    camera_cvt = new imageConverter();
-    // Load frame_id name
-    this->declare_parameter<std::string>("frame_id", frameId);
-    this->get_parameter("frame_id", frameId);
-    RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
-    // Initialize publisher
-    publisher_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
-    // Initialize camera
-    std::string camera_device = "0";	// MIPI CSI camera by default
-    this->declare_parameter<std::string>("camera.device", camera_device);
-    this->get_parameter("camera.device", camera_device);
-    RCLCPP_INFO(this->get_logger(), "opening camera device %s", camera_device.c_str());
-    // Load configuration
-    double frameRate = 15.0;
-    this->declare_parameter<double>("camera.frameRate", frameRate);
-    this->get_parameter("camera.frameRate", frameRate);
-    int camera_width = 320; //gstCamera::DefaultWidth;
-    this->declare_parameter<int>("camera.width", camera_width);
-    this->get_parameter("camera.width", camera_width);
-    int camera_height = 240; //gstCamera::DefaultHeight;
-    this->declare_parameter<int>("camera.height", camera_height);
-    this->get_parameter("camera.height", camera_height);
-
-    RCLCPP_INFO(this->get_logger(), "width %d height %d - Framerate %f", camera_width, camera_height, frameRate);
-
-    videoOptions video_options;
-
-    //video_options.resource = camera_device.c_str();
-
-    std::string codec_str = "unknown";
-    std::string flip_str = "";
-
-    if( codec_str.size() != 0 )
-      video_options.codec = videoOptions::CodecFromStr(codec_str.c_str());
-
-    if( flip_str.size() != 0 )
-      video_options.flipMethod = videoOptions::FlipMethodFromStr(flip_str.c_str());
-
-    video_options.width = camera_width;
-    video_options.height = camera_height;
-    video_options.frameRate = (float)frameRate;
-    video_options.loop = 0;
-    //video_options.ioType = videoOptions::INPUT;
-
-    /* open camera device */
-    camera = videoSource::Create(camera_device.c_str(), video_options);
-
-    if( !camera )
-    {
-      RCLCPP_ERROR(this->get_logger(), "failed to open camera device %s", camera_device.c_str());
-    }
-
-    /*
-    * start the camera streaming
-    */
-    if( !camera->Open() )
-    {
-      RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
-    }
+    RCLCPP_ERROR(this->get_logger(), "failed to open camera device %s", camera_device.c_str());
   }
 
-  bool isStreaming()
+  /*
+  * start the camera streaming
+  */
+  if( !camera->Open() )
   {
-    return camera->IsStreaming();
+    RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
   }
-
-  bool acquire()
-  {
-    imageConverter::PixelType* nextFrame = NULL;
-    // get the latest frame
-    if( !camera->Capture(&nextFrame, 1000) )
-    {
-      RCLCPP_ERROR(this->get_logger(), "failed to capture camera frame");
-      return false;
-    }
-    // assure correct image size
-    if( !camera_cvt->Resize(camera->GetWidth(), camera->GetHeight(), imageConverter::ROSOutputFormat) )
-    {
-      RCLCPP_ERROR(this->get_logger(), "failed to resize camera image converter");
-      return false;
-    }
-    // populate the message
-    sensor_msgs::msg::Image msg;
-
-    if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, nextFrame) )
-    {
-      RCLCPP_ERROR(this->get_logger(), "failed to convert camera frame to sensor_msgs::Image");
-      return false;
-    }
-    // Add header,timestamp and frame_id
-    msg.header.stamp = this->get_clock()->now();
-    msg.header.frame_id = frameId;
-    // Publish camera frame message
-    publisher_->publish(msg);
-    RCLCPP_DEBUG(this->get_logger(), "Published camera frame");
-    return true;
-  }
-
-  ~CameraPublisher()
-  {
-    RCLCPP_DEBUG(this->get_logger(), "Close camera_publisher");
-    camera->Close();
-    camera_cvt->Free();
-  }
-
-private:
-  videoSource* camera;
-  imageConverter* camera_cvt;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
-  std::string frameId;
-};
-
-
-int main(int argc, char * argv[])
-{
-  rclcpp::init(argc, argv);
-  // Initialize Camera publisher node
-  CameraPublisher camera;
-  // Reference rclppp
-  // https://github.com/ros2/ros_core_documentation/blob/master/source/rclcpp_cpp_client_library_overview.rst
-  while (rclcpp::ok()) {
-    // If acquire got an error close the stream and close the node
-    if ( ! camera.acquire())
-      return 1;
-  }
-  rclcpp::shutdown();
-  return 0;
 }
+
+bool CameraPublisher::isStreaming()
+{
+  return camera->IsStreaming();
+}
+
+bool CameraPublisher::acquire()
+{
+  imageConverter::PixelType* nextFrame = NULL;
+  // get the latest frame
+  if( !camera->Capture(&nextFrame, 1000) )
+  {
+    RCLCPP_ERROR(this->get_logger(), "failed to capture camera frame");
+    return false;
+  }
+  // assure correct image size
+  if( !camera_cvt->Resize(camera->GetWidth(), camera->GetHeight(), imageConverter::ROSOutputFormat) )
+  {
+    RCLCPP_ERROR(this->get_logger(), "failed to resize camera image converter");
+    return false;
+  }
+  // populate the message
+  sensor_msgs::msg::Image msg;
+
+  if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, nextFrame) )
+  {
+    RCLCPP_ERROR(this->get_logger(), "failed to convert camera frame to sensor_msgs::Image");
+    return false;
+  }
+  // Add header,timestamp and frame_id
+  msg.header.stamp = this->get_clock()->now();
+  msg.header.frame_id = frameId;
+  // Publish camera frame message
+  publisher_->publish(msg);
+  RCLCPP_DEBUG(this->get_logger(), "Published camera frame");
+  return true;
+}
+
+CameraPublisher::~CameraPublisher()
+{
+  RCLCPP_DEBUG(this->get_logger(), "Close camera_publisher");
+  camera->Close();
+  camera_cvt->Free();
+}
+// EOF

@@ -54,7 +54,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'nanosaur = nanosaur_base.nanosaur:main'
+            'nanosaur_base = nanosaur_base.nanosaur:main'
         ],
     },
 )

@@ -34,7 +34,7 @@ include_directories(
     ${CUDA_INCLUDE_DIRS}
     ${GSTREAMER_INCLUDE_DIRS}
 )
-add_executable(nanosaur_camera src/camera_publisher.cpp src/image_converter.cpp)
+add_executable(nanosaur_camera src/streamer.cpp src/camera_publisher.cpp src/image_converter.cpp)
 ament_target_dependencies(nanosaur_camera rclcpp std_msgs sensor_msgs)
 target_link_libraries(nanosaur_camera jetson-utils ${GSTREAMER_LIBRARIES})
 
