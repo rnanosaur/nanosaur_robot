@@ -24,6 +24,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from genericpath import isfile
 import os
 import launch
 from launch.actions import DeclareLaunchArgument
@@ -36,17 +37,15 @@ import launch_ros
 def generate_launch_description():
     pkg_bringup = launch_ros.substitutions.FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
     pkg_description = launch_ros.substitutions.FindPackageShare(package='nanosaur_description').find('nanosaur_description')
-    pkg_camera = launch_ros.substitutions.FindPackageShare(package='nanosaur_camera').find('nanosaur_camera')
 
-    nanosaur_dir = LaunchConfiguration(
-        'nanosaur_dir',
-        default=os.path.join(pkg_bringup, 'param', 'nanosaur.yml'))
+    nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
+    nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
 
     nanosaur_base_node = launch_ros.actions.Node(
         package='nanosaur_base',
         executable='nanosaur_base',
-        name='nanosaur',
-        parameters=[nanosaur_dir],
+        name='nanosaur_base',
+        parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
 
@@ -54,6 +53,7 @@ def generate_launch_description():
         package='nanosaur_camera',
         executable='nanosaur_camera',
         name='nanosaur_camera',
+        parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
 
