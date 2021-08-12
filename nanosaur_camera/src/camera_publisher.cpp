@@ -61,6 +61,10 @@ CameraPublisher::CameraPublisher()
   // Initialize publisher
   image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
   info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", 10);
+  mRgbCamInfoMsg = std::make_shared<sensor_msgs::msg::CameraInfo>();
+  std::string rgb_topic = "AAA";
+  //mPubRgb = image_transport::create_camera_publisher(this, rgb_topic, mVideoQos.get_rmw_qos_profile());
+  //RCLCPP_INFO_STREAM(this->get_logger(), "Advertised on topic: " << mPubRgb.getTopic());
   // Initialize camera
   std::string camera_device = "0";	// MIPI CSI camera by default
   this->declare_parameter<std::string>("camera.device", camera_device);
@@ -111,12 +115,6 @@ CameraPublisher::CameraPublisher()
   {
     RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
   }
-
-  std::string rgb_topic = "AAA";
-  mPubRgb = image_transport::create_camera_publisher(this, rgb_topic, mVideoQos.get_rmw_qos_profile());
-  //RCLCPP_INFO_STREAM(this->get_logger(), "Advertised on topic: " << mPubRgb.getTopic());
-
-  //cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "AA");
 }
 
 bool CameraPublisher::isStreaming()
@@ -155,6 +153,9 @@ bool CameraPublisher::acquire()
   ci.header.stamp = stamp;
   ci.width = camera->GetWidth();
   ci.height = camera->GetHeight();
+
+  mRgbCamInfoMsg->header.stamp = stamp;
+  mPubRgb.publish(img, *mRgbCamInfoMsg); 
 
   // Publish camera frame message
   image_pub_->publish(img);

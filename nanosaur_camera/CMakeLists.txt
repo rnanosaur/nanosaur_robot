@@ -52,6 +52,10 @@ add_executable(nanosaur_camera src/streamer.cpp src/camera_publisher.cpp src/ima
 ament_target_dependencies(nanosaur_camera rclcpp std_msgs sensor_msgs)
 target_link_libraries(nanosaur_camera jetson-utils ${GSTREAMER_LIBRARIES})
 
+ament_target_dependencies(nanosaur_camera
+    ${DEPENDENCIES}
+)
+
 install(
   TARGETS nanosaur_camera
   DESTINATION lib/${PROJECT_NAME}
@@ -71,4 +75,5 @@ install(
 )
 
 ament_export_include_directories(include)
+ament_export_dependencies(${DEPENDENCIES})
 ament_package()

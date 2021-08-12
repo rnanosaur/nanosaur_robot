@@ -67,6 +67,8 @@ private:
     // https://github.com/ros2/ros2/wiki/About-Quality-of-Service-Settings
     rclcpp::QoS mVideoQos;
     image_transport::CameraPublisher mPubRgb;
+    // Camera infos
+    std::shared_ptr<sensor_msgs::msg::CameraInfo> mRgbCamInfoMsg;
     
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
