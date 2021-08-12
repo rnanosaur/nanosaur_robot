@@ -47,7 +47,10 @@
 
 using namespace std::chrono_literals;
 
-CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_optical_frame")
+CameraPublisher::CameraPublisher()
+ : Node("camera_publisher")
+ , mVideoQos(1)
+ , frameId("camera_optical_frame")
 {
   /* create image converter */
   camera_cvt = new imageConverter();
@@ -56,7 +59,8 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   this->get_parameter("frame_id", frameId);
   RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
   // Initialize publisher
-  publisher_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+  image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+  info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", 10);
   // Initialize camera
   std::string camera_device = "0";	// MIPI CSI camera by default
   this->declare_parameter<std::string>("camera.device", camera_device);
@@ -107,6 +111,12 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   {
     RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
   }
+
+  std::string rgb_topic = "AAA";
+  mPubRgb = image_transport::create_camera_publisher(this, rgb_topic, mVideoQos.get_rmw_qos_profile());
+  //RCLCPP_INFO_STREAM(this->get_logger(), "Advertised on topic: " << mPubRgb.getTopic());
+
+  //cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "AA");
 }
 
 bool CameraPublisher::isStreaming()
@@ -130,18 +140,25 @@ bool CameraPublisher::acquire()
     return false;
   }
   // populate the message
-  sensor_msgs::msg::Image msg;
-
-  if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, nextFrame) )
+  sensor_msgs::msg::Image img;
+  sensor_msgs::msg::CameraInfo ci;
+  if( !camera_cvt->Convert(img, imageConverter::ROSOutputFormat, nextFrame) )
   {
     RCLCPP_ERROR(this->get_logger(), "failed to convert camera frame to sensor_msgs::Image");
     return false;
   }
+  auto stamp = this->get_clock()->now();
   // Add header,timestamp and frame_id
-  msg.header.stamp = this->get_clock()->now();
-  msg.header.frame_id = frameId;
+  img.header.stamp = stamp;
+  img.header.frame_id = frameId;
+  // Make Camera info message
+  ci.header.stamp = stamp;
+  ci.width = camera->GetWidth();
+  ci.height = camera->GetHeight();
+
   // Publish camera frame message
-  publisher_->publish(msg);
+  image_pub_->publish(img);
+  info_pub_->publish(ci);
   RCLCPP_DEBUG(this->get_logger(), "Published camera frame");
   return true;
 }

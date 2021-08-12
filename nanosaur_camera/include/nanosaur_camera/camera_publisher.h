@@ -32,7 +32,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include <jetson-utils/videoSource.h>
+#include <image_transport/image_transport.hpp>
+#include <image_transport/camera_publisher.hpp>
+#include <image_transport/publisher.hpp>
 
+#include <camera_info_manager/camera_info_manager.hpp>
 #include "nanosaur_camera/image_converter.h"
 
 /**
@@ -58,7 +62,14 @@ private:
 
     videoSource* camera;
     imageConverter* camera_cvt;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
+
+    // QoS parameters
+    // https://github.com/ros2/ros2/wiki/About-Quality-of-Service-Settings
+    rclcpp::QoS mVideoQos;
+    image_transport::CameraPublisher mPubRgb;
+    
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
     std::string frameId;
 };
 
