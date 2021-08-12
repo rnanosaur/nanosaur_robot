@@ -31,6 +31,8 @@
 #define IMAGE_PUBLISHER_H
 
 #include "rclcpp/rclcpp.hpp"
+#include <sensor_msgs/msg/camera_info.hpp>
+
 #include <jetson-utils/videoSource.h>
 
 #include "nanosaur_camera/image_converter.h"
@@ -46,6 +48,8 @@ public:
      */
     CameraPublisher();
 
+    void loadCameraInfo(int width, int height);
+
     bool isStreaming();
 
     bool acquire();
@@ -58,7 +62,9 @@ private:
 
     videoSource* camera;
     imageConverter* camera_cvt;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
+    std::shared_ptr<sensor_msgs::msg::CameraInfo> ci_;
     std::string frameId;
 };
 

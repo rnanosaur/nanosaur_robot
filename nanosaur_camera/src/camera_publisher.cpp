@@ -56,7 +56,9 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   this->get_parameter("frame_id", frameId);
   RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
   // Initialize publisher
-  publisher_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+  image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
+  info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", 10);
+  ci_ = std::make_shared<sensor_msgs::msg::CameraInfo>();
   // Initialize camera
   std::string camera_device = "0";	// MIPI CSI camera by default
   this->declare_parameter<std::string>("camera.device", camera_device);
@@ -101,12 +103,23 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   }
 
   /*
-  * start the camera streaming
-  */
+   * start the camera streaming
+   */
   if( !camera->Open() )
   {
     RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
   }
+
+  /*
+   * Load camera info
+   */
+  loadCameraInfo(camera_width, camera_height);
+}
+
+void CameraPublisher::loadCameraInfo(int width, int height)
+{
+  ci_->width = width;
+  ci_->height = height;
 }
 
 bool CameraPublisher::isStreaming()
@@ -130,18 +143,23 @@ bool CameraPublisher::acquire()
     return false;
   }
   // populate the message
-  sensor_msgs::msg::Image msg;
+  sensor_msgs::msg::Image img;
 
-  if( !camera_cvt->Convert(msg, imageConverter::ROSOutputFormat, nextFrame) )
+  if( !camera_cvt->Convert(img, imageConverter::ROSOutputFormat, nextFrame) )
   {
     RCLCPP_ERROR(this->get_logger(), "failed to convert camera frame to sensor_msgs::Image");
     return false;
   }
+  auto stamp = this->get_clock()->now();
   // Add header,timestamp and frame_id
-  msg.header.stamp = this->get_clock()->now();
-  msg.header.frame_id = frameId;
+  img.header.stamp = stamp;
+  img.header.frame_id = frameId;
+  // Make Camera info message
+  ci_->header.stamp = stamp;
+
   // Publish camera frame message
-  publisher_->publish(msg);
+  image_pub_->publish(img);
+  info_pub_->publish(*ci_);
   RCLCPP_DEBUG(this->get_logger(), "Published camera frame");
   return true;
 }
