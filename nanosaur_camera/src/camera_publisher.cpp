@@ -73,6 +73,13 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   int camera_height = CAMERA_HEIGHT;
   this->declare_parameter<int>("camera.height", camera_height);
   this->get_parameter("camera.height", camera_height);
+  /*
+   * Load camera info
+   */
+  std::string camera_name = "camerav2";
+  this->get_parameter("camera_name", camera_name);
+  std::string camera_url = "package://nanosaur_camera/camera_info/" + camera_name + ".yml";
+  cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, camera_name, camera_url);
 
   RCLCPP_INFO(this->get_logger(), "width %d height %d - Framerate %f", camera_width, camera_height, frameRate);
 
@@ -108,13 +115,6 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   {
     RCLCPP_ERROR(this->get_logger(), "failed to start streaming video source");
   }
-
-  /*
-   * Load camera info
-   */
-  std::string camera_name = "camerav2";
-  std::string camera_url = "package://nanosaur_camera/camera_info/camerav2.yml";
-  cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, camera_name, camera_url);
 
   ci_ = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
 }
@@ -153,6 +153,9 @@ bool CameraPublisher::acquire()
   img.header.frame_id = frameId;
   // Make Camera info message
   ci_->header.stamp = stamp;
+  ci_->header.frame_id = frameId;
+  //ci_->width = camera->GetWidth();
+  //ci_->height = camera->GetHeight();
 
   // Publish camera frame message
   image_pub_->publish(img);
