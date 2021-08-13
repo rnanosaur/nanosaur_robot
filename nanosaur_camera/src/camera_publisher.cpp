@@ -58,7 +58,6 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   // Initialize publisher
   image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
   info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", 10);
-  ci_ = std::make_shared<sensor_msgs::msg::CameraInfo>();
   // Initialize camera
   std::string camera_device = "0";	// MIPI CSI camera by default
   this->declare_parameter<std::string>("camera.device", camera_device);
@@ -113,13 +112,11 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   /*
    * Load camera info
    */
-  loadCameraInfo(camera_width, camera_height);
-}
+  std::string camera_name = "camerav2";
+  std::string camera_url = "package://nanosaur_camera/camera_info/camerav2.yml";
+  cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, camera_name, camera_url);
 
-void CameraPublisher::loadCameraInfo(int width, int height)
-{
-  ci_->width = width;
-  ci_->height = height;
+  ci_ = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
 }
 
 bool CameraPublisher::isStreaming()

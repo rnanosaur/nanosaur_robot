@@ -32,6 +32,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/msg/camera_info.hpp>
+#include <camera_info_manager/camera_info_manager.hpp>
 
 #include <jetson-utils/videoSource.h>
 
@@ -48,8 +49,6 @@ public:
      */
     CameraPublisher();
 
-    void loadCameraInfo(int width, int height);
-
     bool isStreaming();
 
     bool acquire();
@@ -64,7 +63,10 @@ private:
     imageConverter* camera_cvt;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
+
     std::shared_ptr<sensor_msgs::msg::CameraInfo> ci_;
+    std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
+
     std::string frameId;
 };
 

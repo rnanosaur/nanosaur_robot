@@ -18,10 +18,21 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(camera_info_manager REQUIRED)
 
 find_package(jetson-utils REQUIRED)
 find_package(CUDA REQUIRED)
+
+set(DEPENDENCIES
+    rclcpp
+    rclcpp_components
+    builtin_interfaces
+    sensor_msgs
+    camera_info_manager
+)
 
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
 # message("-- CUDA version: ${CUDA_VERSION}")
@@ -38,6 +49,10 @@ add_executable(nanosaur_camera src/streamer.cpp src/camera_publisher.cpp src/ima
 ament_target_dependencies(nanosaur_camera rclcpp std_msgs sensor_msgs)
 target_link_libraries(nanosaur_camera jetson-utils ${GSTREAMER_LIBRARIES})
 
+ament_target_dependencies(nanosaur_camera
+    ${DEPENDENCIES}
+)
+
 install(
   TARGETS nanosaur_camera
   DESTINATION lib/${PROJECT_NAME}
@@ -50,6 +65,12 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install CAMERA_INFO files
+install(
+  DIRECTORY camera_info
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Install launch files.
 install(
   DIRECTORY launch
@@ -57,4 +78,5 @@ install(
 )
 
 ament_export_include_directories(include)
+ament_export_dependencies(${DEPENDENCIES})
 ament_package()

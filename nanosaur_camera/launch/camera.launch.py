@@ -34,7 +34,7 @@ def generate_launch_description():
 
     camera_dir = LaunchConfiguration(
         'camera_dir',
-        default=os.path.join(pkg_camera, 'param', 'camera.yml'))
+        default=os.path.join(pkg_camera, 'param', 'config.yml'))
 
     camera_node = launch_ros.actions.Node(
         package='nanosaur_camera',
