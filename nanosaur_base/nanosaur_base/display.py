@@ -72,6 +72,24 @@ class Display:
         atexit.register(self._close)
 
     def display_callback(self):
+        
+        self.x = 0
+        shape_width_big= 60
+        
+        shape_width = 20
+        shape_height = shape_width
+        
+        center_x = self.x+self.width/2
+        center_y = self.height/2
+
+        self.draw.ellipse((center_x - shape_width_big/2, self.top, center_x + shape_width_big/2, self.bottom), outline=255, fill=0)
+        
+        self.draw.ellipse((center_x - shape_width/2, self.bottom - shape_height - 5, center_x + shape_width/2, self.bottom - 5), outline=255, fill=1)
+        
+        self.disp.image(self.image)
+        self.disp.display()
+
+    def display_callback_old(self):
         # Draw a black filled box to clear the image.
         self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
         # Draw text
