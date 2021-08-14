@@ -41,6 +41,12 @@ def generate_launch_description():
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
 
+    jtop_node = launch_ros.actions.Node(
+        package='ros2_jetson_stats',
+        executable='ros2_jtop',
+        name='ros2_jtop'
+    )
+
     nanosaur_base_node = launch_ros.actions.Node(
         package='nanosaur_base',
         executable='nanosaur_base',
@@ -67,7 +73,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [pkg_description, '/launch/description.launch.py'])),
-
+        # jtop node
+        jtop_node,
         # Nanosaur camera
         nanosaur_camera_node,
         # Nanusaur driver motors and display
