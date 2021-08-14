@@ -28,11 +28,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/rclcpp.hpp"
  
- #include "nanosaur_camera/camera_publisher.h"
+#include "nanosaur_camera/camera_publisher.h"
 
- int main(int argc, char * argv[])
+int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   // Initialize Camera publisher node
@@ -41,8 +41,9 @@
   // https://github.com/ros2/ros_core_documentation/blob/master/source/rclcpp_cpp_client_library_overview.rst
   while (rclcpp::ok()) {
     // If acquire got an error close the stream and close the node
-    if ( ! camera.acquire())
-      return 1;
+    if ( camera.subscribers() )
+      if ( ! camera.acquire())
+        return 1;
   }
   rclcpp::shutdown();
   return 0;

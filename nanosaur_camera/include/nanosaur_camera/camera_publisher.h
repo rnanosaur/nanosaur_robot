@@ -51,16 +51,21 @@ public:
 
     bool isStreaming();
 
+    bool subscribers();
+
     bool acquire();
 
     ~CameraPublisher();
 
 private:
 
-    std::string  mLaunchStr;
-
     videoSource* camera;
     imageConverter* camera_cvt;
+
+    // QoS parameters
+    // https://github.com/ros2/ros2/wiki/About-Quality-of-Service-Settings
+    rclcpp::QoS mVideoQos;
+    
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
 

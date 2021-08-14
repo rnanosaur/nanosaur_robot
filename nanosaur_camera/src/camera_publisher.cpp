@@ -47,7 +47,10 @@
 
 using namespace std::chrono_literals;
 
-CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_optical_frame")
+CameraPublisher::CameraPublisher()
+ : Node("camera_publisher")
+ , mVideoQos(1)
+ , frameId("camera_optical_frame")
 {
   /* create image converter */
   camera_cvt = new imageConverter();
@@ -56,8 +59,8 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
   this->get_parameter("frame_id", frameId);
   RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
   // Initialize publisher
-  image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
-  info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", 10);
+  image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", mVideoQos);
+  info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", mVideoQos);
   // Initialize camera
   std::string camera_device = "0";	// MIPI CSI camera by default
   this->declare_parameter<std::string>("camera.device", camera_device);
@@ -122,6 +125,13 @@ CameraPublisher::CameraPublisher() : Node("camera_publisher"), frameId("camera_o
 bool CameraPublisher::isStreaming()
 {
   return camera->IsStreaming();
+}
+
+bool CameraPublisher::subscribers()
+{
+  size_t rgbSubnumber = count_subscribers(image_pub_->get_topic_name());
+  //RCLCPP_INFO_STREAM(this->get_logger(), "Num subscribers: " << rgbSubnumber );
+  return (rgbSubnumber > 0);
 }
 
 bool CameraPublisher::acquire()
