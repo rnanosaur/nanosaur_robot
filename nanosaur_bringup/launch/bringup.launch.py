@@ -37,6 +37,7 @@ import launch_ros
 def generate_launch_description():
     pkg_bringup = launch_ros.substitutions.FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
     pkg_description = launch_ros.substitutions.FindPackageShare(package='nanosaur_description').find('nanosaur_description')
+    pkg_teleop = launch_ros.substitutions.FindPackageShare(package='nanosaur_teleop').find('nanosaur_teleop')
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
@@ -62,6 +63,10 @@ def generate_launch_description():
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
+    
+    nanosaur_teleop = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [pkg_teleop, '/launch/nanosaur_teleop.launch.py']))
 
     return launch.LaunchDescription([
         DeclareLaunchArgument(
@@ -73,6 +78,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [pkg_description, '/launch/description.launch.py'])),
+        # teleop nanosaur
+        nanosaur_teleop,
         # jtop node
         jtop_node,
         # Nanosaur camera
