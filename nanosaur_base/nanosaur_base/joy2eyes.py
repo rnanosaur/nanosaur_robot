@@ -23,39 +23,50 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from setuptools import setup
-# Launch command
-from os import path
-from glob import glob
+from nanosaur_msgs.msg import Eyes
+from sensor_msgs.msg import Joy
+from rclpy.node import Node
+import rclpy
 
-package_name = 'nanosaur_base'
+class Joy2Eyes(Node):
+    
+    def __init__(self):
+        super().__init__('Joy2Eyes')
+        
+        self.publisher_ = self.create_publisher(Eyes, 'eyes', 1)
+        
+        self.subscription = self.create_subscription(
+            Joy,
+            'joy',
+            self.joy_callback,
+            1)
+        self.subscription  # prevent unused variable warning
+        
+    def joy_callback(self, msg):
+        eyes_msg = Eyes()
+        # Read axis
+        axes = msg.axes
+        eyes_msg.x = axes[0] * 100.
+        eyes_msg.y = axes[1] * 100.
+        # Wrap to Eyes message
+        self.publisher_.publish(eyes_msg)
+        # Log message
+        # self.get_logger().info(f"x {eyes_msg.x} y {eyes_msg.y}")
 
-here = path.abspath(path.dirname(__file__))
-with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
-    requirements = f.read().splitlines()
 
-setup(
-    name=package_name,
-    version='0.1.0',
-    packages=[package_name],
-    data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name, ['requirements.txt']),
-        (path.join('share', package_name), glob('launch/*.py'))
-    ],
-    install_requires=requirements,
-    zip_safe=True,
-    maintainer='Raffaello Bonghi',
-    maintainer_email='raffaello@rnext.it',
-    description='Basic drivers for NanoSaur, motors and displays',
-    license='MIT',
-    tests_require=['pytest'],
-    entry_points={
-        'console_scripts': [
-            'nanosaur_base = nanosaur_base.nanosaur:main',
-            'joy2eyes = nanosaur_base.joy2eyes:main'
-        ],
-    },
-)
+def main(args=None):
+    rclpy.init(args=args)
+
+    wrapper = Joy2Eyes()
+    try:
+        rclpy.spin(wrapper)
+    except KeyboardInterrupt:
+        pass
+    # Destroy the node explicitly
+    wrapper.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+# EOF

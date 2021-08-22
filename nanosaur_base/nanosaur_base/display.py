@@ -32,6 +32,12 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
+def circle(x_c, y_c, radius):
+    x_min = x_c - radius
+    y_min = y_c - radius
+    x_max = x_c + radius
+    y_max = y_c + radius
+    return (x_min, y_min, x_max, y_max)
 
 class Display:
 
@@ -64,27 +70,45 @@ class Display:
         padding = 2
         self.top = padding
         self.bottom = self.height-padding
-        # Move left to right keeping track of the current x position for drawing shapes.
-        self.x = 0
+        # Center eyes
+        self.shape_width_big = 30
+        self.center_x = 0
+        self.center_y = 0
         # Init display timer
         self.timer = self.node.create_timer(timer_period, self.display_callback)
         # Configure all motors to stop at program exit
         atexit.register(self._close)
 
-    def display_callback(self):
+    def setPoint(self, x=0, y=0):
+        '''
+        Numbers between -100, 100
+        '''
+        # https://stackoverflow.com/questions/5996881/how-to-limit-a-number-to-be-within-a-specified-range-python
+        clamp = lambda n, minn, maxn: max(min(maxn, n), minn)
+        # limit between -100 and 100
+        x = clamp(x, -100, 100)
+        y = clamp(y + 50, -100, 100)
         
-        self.x = 0
-        shape_width_big= 60
-        
-        shape_width = 20
-        shape_height = shape_width
-        
-        center_x = self.x+self.width/2
-        center_y = self.height/2
+        self.center_x = (x / 100.) * (self.width) / 2.
+        self.center_y = (y / 100.) * (self.height) / 2.
 
-        self.draw.ellipse((center_x - shape_width_big/2, self.top, center_x + shape_width_big/2, self.bottom), outline=255, fill=0)
+    def display_callback(self):
+        center_x = self.center_x + self.width / 2.
+        center_y = self.center_y + self.height / 2.
         
-        self.draw.ellipse((center_x - shape_width/2, self.bottom - shape_height - 5, center_x + shape_width/2, self.bottom - 5), outline=255, fill=1)
+        center_big_x = 0 if abs(self.center_x) < self.shape_width_big else self.center_x / 2.
+        center_big_y = 0 if abs(self.center_y) < self.shape_width_big else self.center_y / 2.
+
+        # Draw a black filled box to clear the image.
+        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
+        
+        self.draw.ellipse(circle(center_big_x + self.width / 2., center_big_y + self.height / 2., self.shape_width_big), outline=255, fill=0)
+        self.draw.ellipse(circle(center_x, center_y, 10), outline=255, fill=1)
+        
+        # Line separation
+        #self.draw.line((self.width * 1/4, 0, self.width* 1/4, self.height), fill=255)
+        #self.draw.line((self.width/2, 0, self.width/2, self.height), fill=255)
+        #self.draw.line((self.width * 3/4, 0, self.width* 3/4, self.height), fill=255)
         
         self.disp.image(self.image)
         self.disp.display()
@@ -94,7 +118,6 @@ class Display:
         self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
         # Draw text
         # self.draw.text((self.x, self.top), f"ID: {self.i2c_address}", font=self.font, fill=255)
-
         self.x = 0
         shape_width = 20
         padding = 2

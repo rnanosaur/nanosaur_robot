@@ -23,39 +23,45 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from setuptools import setup
-# Launch command
-from os import path
-from glob import glob
+import os
+import launch
+from launch.substitutions import LaunchConfiguration
+import launch_ros
 
-package_name = 'nanosaur_base'
+def generate_launch_description():
+    pkg_bringup = launch_ros.substitutions.FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
+    joy_dev = launch.substitutions.LaunchConfiguration('joy_dev')
+    
+    nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
+    nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
+    
+    nanosaur_base_node = launch_ros.actions.Node(
+        package='nanosaur_base',
+        executable='nanosaur_base',
+        name='nanosaur_base',
+        parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
+        output='screen'
+    )
 
-here = path.abspath(path.dirname(__file__))
-with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
-    requirements = f.read().splitlines()
+    joy2eyes_node = launch_ros.actions.Node(
+        package='nanosaur_base',
+        executable='joy2eyes',
+        name='joy2eyes',
+        output='screen'
+    )
+    
+    return launch.LaunchDescription([#
+        launch.actions.DeclareLaunchArgument('joy_dev', default_value='/dev/input/js0'),
 
-setup(
-    name=package_name,
-    version='0.1.0',
-    packages=[package_name],
-    data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name, ['requirements.txt']),
-        (path.join('share', package_name), glob('launch/*.py'))
-    ],
-    install_requires=requirements,
-    zip_safe=True,
-    maintainer='Raffaello Bonghi',
-    maintainer_email='raffaello@rnext.it',
-    description='Basic drivers for NanoSaur, motors and displays',
-    license='MIT',
-    tests_require=['pytest'],
-    entry_points={
-        'console_scripts': [
-            'nanosaur_base = nanosaur_base.nanosaur:main',
-            'joy2eyes = nanosaur_base.joy2eyes:main'
-        ],
-    },
-)
+        launch_ros.actions.Node(
+            package='joy', executable='joy_node', name='joy_node',
+            parameters=[{
+                'dev': joy_dev,
+                'deadzone': 0.3,
+                'autorepeat_rate': 20.0,
+            }]),
+        # Joystick to eyes message wrapper
+        joy2eyes_node,
+        # Nanusaur driver motors and display
+        nanosaur_base_node
+    ])

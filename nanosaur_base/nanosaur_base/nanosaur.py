@@ -34,6 +34,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from .motor import Motor
 from .display import Display
+from .eyes import eyes
 
 
 def euclidean_of_vectors(xyz1, xyz2):
@@ -61,20 +62,8 @@ class NanoSaur(Node):
 
     def __init__(self):
         super().__init__('nanosaur')
-        # Initialize right Display controller
-        self.declare_parameter("display.right.bus", 0)
-        right_bus = int(self.get_parameter("display.right.bus").value)
-        self.declare_parameter("display.right.address", 0x3C)
-        right_address = int(self.get_parameter("display.right.address").value)
-        self.declare_parameter("display.left.bus", 1)
-        left_bus = int(self.get_parameter("display.left.bus").value)
-        self.declare_parameter("display.left.address", 0x3C)
-        left_address = int(self.get_parameter("display.left.address").value)
-        # Initialize Displays controller
-        self.get_logger().info(f"Display left bus={left_bus} adr={left_address}")
-        self.display_left = Display(self, i2c_bus=left_bus, i2c_address=left_address)
-        self.get_logger().info(f"Display right bus={right_bus} adr={right_address}")
-        self.display_right = Display(self, i2c_bus=right_bus, i2c_address=right_address)
+        # Initialize eyes controller
+        self.eyes = eyes(self)
         # Get rate joint_states
         self.declare_parameter("rate", 5)
         self.timer_period = 1. / float(self.get_parameter("rate").value)
