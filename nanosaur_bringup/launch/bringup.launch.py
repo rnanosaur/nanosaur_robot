@@ -64,6 +64,13 @@ def generate_launch_description():
         output='screen'
     )
     
+    joy2eyes_node = launch_ros.actions.Node(
+        package='nanosaur_base',
+        executable='joy2eyes',
+        name='joy2eyes',
+        output='screen'
+    )
+    
     nanosaur_teleop = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [pkg_teleop, '/launch/nanosaur_teleop.launch.py']))
@@ -82,6 +89,8 @@ def generate_launch_description():
         nanosaur_teleop,
         # jtop node
         jtop_node,
+        # Eyes bridge
+        joy2eyes_node,
         # Nanosaur camera
         nanosaur_camera_node,
         # Nanusaur driver motors and display

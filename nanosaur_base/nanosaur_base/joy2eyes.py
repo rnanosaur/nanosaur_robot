@@ -32,6 +32,10 @@ class Joy2Eyes(Node):
     
     def __init__(self):
         super().__init__('Joy2Eyes')
+        self.declare_parameter("axes.x", 3)
+        self.axes_x = int(self.get_parameter("axes.x").value)
+        self.declare_parameter("axes.y", 4)
+        self.axes_y = int(self.get_parameter("axes.y").value)
         
         self.publisher_ = self.create_publisher(Eyes, 'eyes', 1)
         
@@ -46,8 +50,8 @@ class Joy2Eyes(Node):
         eyes_msg = Eyes()
         # Read axis
         axes = msg.axes
-        eyes_msg.x = axes[0] * 100.
-        eyes_msg.y = axes[1] * 100.
+        eyes_msg.x = axes[self.axes_x] * 100.
+        eyes_msg.y = axes[self.axes_y] * 100.
         # Wrap to Eyes message
         self.publisher_.publish(eyes_msg)
         # Log message
