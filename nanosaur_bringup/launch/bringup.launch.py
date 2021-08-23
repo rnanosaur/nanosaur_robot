@@ -37,7 +37,7 @@ import launch_ros
 def generate_launch_description():
     pkg_bringup = launch_ros.substitutions.FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
     pkg_description = launch_ros.substitutions.FindPackageShare(package='nanosaur_description').find('nanosaur_description')
-    pkg_teleop = launch_ros.substitutions.FindPackageShare(package='nanosaur_teleop').find('nanosaur_teleop')
+    pkg_control = launch_ros.substitutions.FindPackageShare(package='nanosaur_control').find('nanosaur_control')
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
@@ -71,22 +71,24 @@ def generate_launch_description():
         output='screen'
     )
     
-    nanosaur_teleop = IncludeLaunchDescription(
+    # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
+    twist_control_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            [pkg_teleop, '/launch/nanosaur_teleop.launch.py']))
+            [pkg_control, '/launch/twist_control.launch.py']))
+
+    description_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [pkg_description, '/launch/description.launch.py']))
 
     return launch.LaunchDescription([
         DeclareLaunchArgument(
             'nanosaur_dir',
             default_value=nanosaur_dir,
             description='Full path to nanosaur parameter file to load'),
-
-        # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [pkg_description, '/launch/description.launch.py'])),
-        # teleop nanosaur
-        nanosaur_teleop,
+        # Nanosaur description launch
+        description_launch,
+        # Twist control launcher
+        twist_control_launch,
         # jtop node
         jtop_node,
         # Eyes bridge
