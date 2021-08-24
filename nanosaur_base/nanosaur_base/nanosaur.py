@@ -24,6 +24,7 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import signal
 import rclpy
 import math
 from urdf_parser_py.urdf import URDF
@@ -172,14 +173,22 @@ class NanoSaur(Node):
         self.joint_pub.publish(self.joint_state)
 
 
+def exit_signal(signum, frame):
+    print("Close service by signal {signum}".format(signum=signum))
+    quit()
+
+
 def main(args=None):
     rclpy.init(args=args)
+    
+    signal.signal(signal.SIGTERM, exit_signal)
 
     nanosaur = NanoSaur()
     try:
         rclpy.spin(nanosaur)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
         pass
+    print("Closing node")
     # Destroy the node explicitly
     nanosaur.destroy_node()
     rclpy.shutdown()
