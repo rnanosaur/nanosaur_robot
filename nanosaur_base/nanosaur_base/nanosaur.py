@@ -180,18 +180,18 @@ def exit_signal(signum, frame):
 
 def main(args=None):
     rclpy.init(args=args)
-    
+    # Catch SIGTERM signal
     signal.signal(signal.SIGTERM, exit_signal)
-
+    # Start Nanosaur
     nanosaur = NanoSaur()
     try:
         rclpy.spin(nanosaur)
     except (KeyboardInterrupt, SystemExit):
         pass
-    print("Closing node")
     # Destroy the node explicitly
     nanosaur.destroy_node()
     rclpy.shutdown()
+    print("Nanosaur node quit")
 
 
 if __name__ == '__main__':
