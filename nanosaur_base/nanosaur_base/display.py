@@ -76,6 +76,8 @@ class Display:
         self.center_y = 0
         # Init display timer
         self.timer = self.node.create_timer(timer_period, self.display_callback)
+        # Initialize display
+        self.setPoint()
         # Configure all motors to stop at program exit
         atexit.register(self._close)
 
