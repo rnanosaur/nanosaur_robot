@@ -43,9 +43,9 @@ def generate_launch_description():
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
 
     jtop_node = launch_ros.actions.Node(
-        package='ros2_jetson_stats',
-        executable='ros2_jtop',
-        name='ros2_jtop'
+        package='jetson_stats_wrapper',
+        executable='jtop',
+        name='jtop'
     )
 
     nanosaur_base_node = launch_ros.actions.Node(
