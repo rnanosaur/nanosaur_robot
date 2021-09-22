@@ -50,7 +50,7 @@ def generate_launch_description():
         output='screen'
     )
     
-    return launch.LaunchDescription([#
+    return launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument('joy_dev', default_value='/dev/input/js0'),
 
         launch_ros.actions.Node(

@@ -41,6 +41,7 @@ def generate_launch_description():
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
+    camera_topic = launch.substitutions.LaunchConfiguration('camera_topic')
 
     jtop_node = launch_ros.actions.Node(
         package='jetson_stats_wrapper',
@@ -61,6 +62,7 @@ def generate_launch_description():
         executable='nanosaur_camera',
         name='nanosaur_camera',
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
+        remappings=[('/image_raw', camera_topic)],
         output='screen'
     )
     
@@ -85,6 +87,11 @@ def generate_launch_description():
             'nanosaur_dir',
             default_value=nanosaur_dir,
             description='Full path to nanosaur parameter file to load'),
+        # Topic camera
+        DeclareLaunchArgument(
+            'camera_topic',
+            default_value='/image_raw',
+            description='Nanosaur camera output topic'),
         # Nanosaur description launch
         description_launch,
         # Twist control launcher
