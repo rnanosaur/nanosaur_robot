@@ -38,7 +38,9 @@ class Joy2Eyes(Node):
         self.axes_y = int(self.get_parameter("axes.y").value)
         
         self.publisher_ = self.create_publisher(Eyes, 'eyes', 1)
-        
+        # Eyes message
+        self.eyes_msg = Eyes()
+        # Register subcriber
         self.subscription = self.create_subscription(
             Joy,
             'joy',
@@ -47,13 +49,18 @@ class Joy2Eyes(Node):
         self.subscription  # prevent unused variable warning
         
     def joy_callback(self, msg):
-        eyes_msg = Eyes()
-        # Read axis
+        # Decode joystick message
         axes = msg.axes
-        eyes_msg.x = axes[self.axes_x] * 100.
-        eyes_msg.y = axes[self.axes_y] * 100.
+        eyes_x = axes[self.axes_x] * 100.
+        eyes_y = axes[self.axes_y] * 100.
+        # Check if the message is the same, if true return and don't send the same message
+        if (eyes_x == self.eyes_msg.x) or (eyes_y == self.eyes_msg.y):
+            return
+        # Read axis
+        self.eyes_msg.x = eyes_x
+        self.eyes_msg.y = eyes_y
         # Wrap to Eyes message
-        self.publisher_.publish(eyes_msg)
+        self.publisher_.publish(self.eyes_msg)
         # Log message
         # self.get_logger().info(f"x {eyes_msg.x} y {eyes_msg.y}")
 

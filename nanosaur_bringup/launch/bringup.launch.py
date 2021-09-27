@@ -82,27 +82,33 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(
                 [pkg_description, '/launch/description.launch.py']))
 
-    return launch.LaunchDescription([
-        DeclareLaunchArgument(
-            'nanosaur_dir',
-            default_value=nanosaur_dir,
-            description='Full path to nanosaur parameter file to load'),
-        # Topic camera
-        DeclareLaunchArgument(
-            'camera_topic',
-            default_value='/image_raw',
-            description='Nanosaur camera output topic'),
-        # Nanosaur description launch
-        description_launch,
-        # Twist control launcher
-        twist_control_launch,
-        # jtop node
-        jtop_node,
-        # Eyes bridge
-        joy2eyes_node,
-        # Nanosaur camera
-        nanosaur_camera_node,
-        # Nanusaur driver motors and display
-        nanosaur_base_node
-    ])
+    launcher = [
+            DeclareLaunchArgument(
+                'nanosaur_dir',
+                default_value=nanosaur_dir,
+                description='Full path to nanosaur parameter file to load'),
+            # Topic camera
+            DeclareLaunchArgument(
+                'camera_topic',
+                default_value='/image_raw',
+                description='Nanosaur camera output topic'),
+            # Nanosaur description launch
+            description_launch,
+            # Twist control launcher
+            twist_control_launch,
+            # jtop node
+            jtop_node,
+            # Nanosaur camera
+            nanosaur_camera_node,
+            # Nanusaur driver motors and display
+            nanosaur_base_node
+        ]
+
+    # Extra Debug packages
+    # - Eyes bridge
+    if os.getenv('DEBUG', False):
+        print("DEBUG variable exist - Load extra nodes")
+        launcher += [joy2eyes_node]
+
+    return launch.LaunchDescription(launcher)
 # EOF
