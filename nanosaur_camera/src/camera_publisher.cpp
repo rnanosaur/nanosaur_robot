@@ -51,7 +51,6 @@ CameraPublisher::CameraPublisher()
  : Node("camera_publisher")
  , mVideoQos(1)
  , frameId("camera_optical_frame")
- , camera_topic_name("image_raw")
 {
   /* create image converter */
   camera_cvt = new imageConverter();
@@ -75,7 +74,8 @@ CameraPublisher::CameraPublisher()
   this->declare_parameter<int>("camera.height", camera_height);
   this->get_parameter("camera.height", camera_height);
   // Load camera topic name
-  this->declare_parameter<int>("camera.topic", camera_topic_name);
+  std::string camera_topic_name = "image_raw";
+  this->declare_parameter<std::string>("camera.topic", camera_topic_name);
   this->get_parameter("camera.topic", camera_topic_name);
   // Initialize publisher
   image_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_topic_name, mVideoQos);

@@ -73,7 +73,6 @@ private:
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
 
     std::string frameId;
-    std::string camera_topic_name;
 };
 
 #endif // IMAGE_PUBLISHER_H
