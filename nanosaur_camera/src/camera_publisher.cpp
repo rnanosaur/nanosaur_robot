@@ -51,6 +51,7 @@ CameraPublisher::CameraPublisher()
  : Node("camera_publisher")
  , mVideoQos(1)
  , frameId("camera_optical_frame")
+ , camera_topic_name("image_raw")
 {
   /* create image converter */
   camera_cvt = new imageConverter();
@@ -58,9 +59,6 @@ CameraPublisher::CameraPublisher()
   this->declare_parameter<std::string>("frame_id", frameId);
   this->get_parameter("frame_id", frameId);
   RCLCPP_INFO(this->get_logger(), "Frame ID: %s", frameId.c_str());
-  // Initialize publisher
-  image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("image_raw", mVideoQos);
-  info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", mVideoQos);
   // Initialize camera
   std::string camera_device = "0";	// MIPI CSI camera by default
   this->declare_parameter<std::string>("camera.device", camera_device);
@@ -76,6 +74,12 @@ CameraPublisher::CameraPublisher()
   int camera_height = CAMERA_HEIGHT;
   this->declare_parameter<int>("camera.height", camera_height);
   this->get_parameter("camera.height", camera_height);
+  // Load camera topic name
+  this->declare_parameter<int>("camera.topic", camera_topic_name);
+  this->get_parameter("camera.topic", camera_topic_name);
+  // Initialize publisher
+  image_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_topic_name, mVideoQos);
+  info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", mVideoQos);
   /*
    * Load camera info
    */
