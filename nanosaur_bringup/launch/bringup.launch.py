@@ -41,7 +41,6 @@ def generate_launch_description():
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
-    camera_topic = launch.substitutions.LaunchConfiguration('camera_topic')
 
     jtop_node = launch_ros.actions.Node(
         package='jetson_stats_wrapper',
@@ -88,8 +87,6 @@ def generate_launch_description():
                 description='Full path to nanosaur parameter file to load'),
             # Nanosaur description launch
             description_launch,
-            # Twist control launcher
-            twist_control_launch,
             # jtop node
             jtop_node,
             # Nanosaur camera
@@ -97,6 +94,12 @@ def generate_launch_description():
             # Nanusaur driver motors and display
             nanosaur_base_node
         ]
+    
+    # Twist control launcher
+    if os.getenv('NO_TWIST_MUX', False):
+        print("Disable twist-mux")
+    else:
+        launcher += [twist_control_launch]
 
     # Extra Debug packages
     # - Eyes bridge
