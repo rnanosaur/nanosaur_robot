@@ -86,27 +86,6 @@ def generate_launch_description():
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
-    
-    joy2eyes_node = Node(
-        package='nanosaur_base',
-        namespace=namespace,
-        executable='joy2eyes',
-        name='joy2eyes',
-        output='screen'
-    )
-    
-    # include another launch file in the chatter_ns namespace
-    # https://docs.ros.org/en/foxy/How-To-Guides/Launch-file-different-formats.html
-    twist_control_launch = GroupAction(
-        actions = [
-            # push-ros-namespace to set namespace of included nodes
-            PushRosNamespace(namespace),
-            # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    [pkg_control, '/launch/twist_control.launch.py']))
-        ]
-    )
 
     # include another launch file in the chatter_ns namespace
     description_launch = GroupAction(
@@ -115,8 +94,8 @@ def generate_launch_description():
             PushRosNamespace(namespace),
             # Nanosaur description
             IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [pkg_description, '/launch/description.launch.py']))
+                PythonLaunchDescriptionSource(
+                    [pkg_description, '/launch/description.launch.py']))
         ]
     )
 
@@ -135,17 +114,54 @@ def generate_launch_description():
             nanosaur_base_node
         ]
     
+    # include another launch file in the chatter_ns namespace
+    # https://docs.ros.org/en/foxy/How-To-Guides/Launch-file-different-formats.html
+    twist_control_launch = GroupAction(
+        actions = [
+            # push-ros-namespace to set namespace of included nodes
+            PushRosNamespace(namespace),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([pkg_control, '/launch/twist_control.launch.py']))
+        ]
+    )
+    
     # Twist control launcher
     if conf.get("no_twist_mux", False):
         print("Disable twist-mux")
     else:
         launcher += [twist_control_launch]
 
+    joy2eyes_node = Node(
+        package='nanosaur_base',
+        namespace=namespace,
+        executable='joy2eyes',
+        name='joy2eyes',
+        output='screen'
+    )
+
     # Extra Debug packages
     # - Eyes bridge
     if conf.get("debug", False):
         print("DEBUG variable exist - Load extra nodes")
         launcher += [joy2eyes_node]
+
+    # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
+    # include another launch file in the chatter_ns namespace
+    teleop_launch = GroupAction(
+        actions = [
+            # push-ros-namespace to set namespace of included nodes
+            PushRosNamespace(namespace),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([pkg_control, '/launch/teleop.launch.py']),
+                launch_arguments={'joy_vel': 'joy_vel',
+                                  'config_filepath': os.path.join(pkg_control, 'param', 'ps3.nanosaur.yml')}.items()
+                )
+            ]
+    )
+
+    # teleoperation joystick nanosaur
+    # only if joystick is connected
+    launcher += [teleop_launch] if os.path.exists("/dev/input/js0") else []
 
     return LaunchDescription(launcher)
 # EOF
