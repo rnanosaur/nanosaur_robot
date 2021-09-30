@@ -24,61 +24,105 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from genericpath import isfile
 import os
-import launch
-from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription
+import yaml
+
+from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-import launch_ros
 
+from launch.actions import DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription
+from launch.actions import GroupAction
+from launch_ros.actions import PushRosNamespace
+
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+def load_config(config):
+    if os.path.isfile(config):
+        
+        with open(config, "r") as stream:
+            try:
+                return yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+    return None
 
 def generate_launch_description():
-    pkg_bringup = launch_ros.substitutions.FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
-    pkg_description = launch_ros.substitutions.FindPackageShare(package='nanosaur_description').find('nanosaur_description')
-    pkg_control = launch_ros.substitutions.FindPackageShare(package='nanosaur_control').find('nanosaur_control')
+    pkg_bringup = FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
+    pkg_description = FindPackageShare(package='nanosaur_description').find('nanosaur_description')
+    pkg_control = FindPackageShare(package='nanosaur_control').find('nanosaur_control')
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
+    
+    namespace=""
+    # Load nanosaur configuration and check if are included extra parameters
+    conf = load_config(os.path.join(pkg_bringup, 'param', 'robot.yml'))
+    if conf is not None:
+        if "multirobot" in conf:
+            if conf["multirobot"]:
+                namespace=os.getenv("HOSTNAME")
+                print("Enable Multirobot!")
 
-    jtop_node = launch_ros.actions.Node(
+    jtop_node = Node(
         package='jetson_stats_wrapper',
+        namespace=namespace,
         executable='jtop',
         name='jtop'
     )
 
-    nanosaur_base_node = launch_ros.actions.Node(
+    nanosaur_base_node = Node(
         package='nanosaur_base',
+        namespace=namespace,
         executable='nanosaur_base',
         name='nanosaur_base',
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
 
-    nanosaur_camera_node = launch_ros.actions.Node(
+    nanosaur_camera_node = Node(
         package='nanosaur_camera',
+        namespace=namespace,
         executable='nanosaur_camera',
         name='nanosaur_camera',
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
     
-    joy2eyes_node = launch_ros.actions.Node(
+    joy2eyes_node = Node(
         package='nanosaur_base',
+        namespace=namespace,
         executable='joy2eyes',
         name='joy2eyes',
         output='screen'
     )
     
-    # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
-    twist_control_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [pkg_control, '/launch/twist_control.launch.py']))
+    # include another launch file in the chatter_ns namespace
+    # https://docs.ros.org/en/foxy/How-To-Guides/Launch-file-different-formats.html
+    twist_control_launch = GroupAction(
+        actions = [
+            # push-ros-namespace to set namespace of included nodes
+            PushRosNamespace(namespace),
+            # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    [pkg_control, '/launch/twist_control.launch.py']))
+        ]
+    )
 
-    description_launch = IncludeLaunchDescription(
+    # include another launch file in the chatter_ns namespace
+    description_launch = GroupAction(
+        actions = [
+            # push-ros-namespace to set namespace of included nodes
+            PushRosNamespace(namespace),
+            # Nanosaur description
+            IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [pkg_description, '/launch/description.launch.py']))
+        ]
+    )
 
     launcher = [
             DeclareLaunchArgument(
@@ -107,5 +151,5 @@ def generate_launch_description():
         print("DEBUG variable exist - Load extra nodes")
         launcher += [joy2eyes_node]
 
-    return launch.LaunchDescription(launcher)
+    return LaunchDescription(launcher)
 # EOF
