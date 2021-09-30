@@ -47,7 +47,7 @@ def load_config(config):
                 return yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
-    return None
+    return {}
 
 def generate_launch_description():
     pkg_bringup = FindPackageShare(package='nanosaur_bringup').find('nanosaur_bringup')
@@ -57,14 +57,10 @@ def generate_launch_description():
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
     nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
     
-    namespace=""
     # Load nanosaur configuration and check if are included extra parameters
     conf = load_config(os.path.join(pkg_bringup, 'param', 'robot.yml'))
-    if conf is not None:
-        if "multirobot" in conf:
-            if conf["multirobot"]:
-                namespace=os.getenv("HOSTNAME")
-                print("Enable Multirobot!")
+    # Load namespace
+    namespace = os.getenv("HOSTNAME") if conf.get("multirobot", False) else ""
 
     jtop_node = Node(
         package='jetson_stats_wrapper',
@@ -140,14 +136,14 @@ def generate_launch_description():
         ]
     
     # Twist control launcher
-    if os.getenv('NO_TWIST_MUX', False):
+    if conf.get("no_twist_mux", False):
         print("Disable twist-mux")
     else:
         launcher += [twist_control_launch]
 
     # Extra Debug packages
     # - Eyes bridge
-    if os.getenv('DEBUG', False):
+    if conf.get("debug", False):
         print("DEBUG variable exist - Load extra nodes")
         launcher += [joy2eyes_node]
 
