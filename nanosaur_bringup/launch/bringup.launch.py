@@ -74,6 +74,8 @@ def generate_launch_description():
         namespace=namespace,
         executable='nanosaur_base',
         name='nanosaur_base',
+        respawn=True,
+        respawn_delay=5,
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
@@ -83,6 +85,8 @@ def generate_launch_description():
         namespace=namespace,
         executable='nanosaur_camera',
         name='nanosaur_camera',
+        respawn=True,
+        respawn_delay=5,
         parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
         output='screen'
     )
@@ -161,7 +165,9 @@ def generate_launch_description():
 
     # teleoperation joystick nanosaur
     # only if joystick is connected
-    launcher += [teleop_launch] if os.path.exists("/dev/input/js0") else []
+    if os.path.exists("/dev/input/js0"):
+        print("Enable Joystick")
+        launcher += [teleop_launch]
 
     return LaunchDescription(launcher)
 # EOF
