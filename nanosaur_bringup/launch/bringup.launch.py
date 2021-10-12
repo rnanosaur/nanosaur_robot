@@ -68,6 +68,14 @@ def generate_launch_description():
         executable='jtop',
         name='jtop'
     )
+    
+    # System manager
+    system_manager = Node(
+        package='ros2_system_manager',
+        namespace=namespace,
+        executable='system_manager',
+        name='system_manager'
+    )
 
     nanosaur_base_node = Node(
         package='nanosaur_base',
@@ -112,6 +120,8 @@ def generate_launch_description():
             description_launch,
             # jtop node
             jtop_node,
+            # System manager
+            system_manager,
             # Nanosaur camera
             nanosaur_camera_node,
             # Nanusaur driver motors and display
