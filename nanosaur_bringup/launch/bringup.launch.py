@@ -177,7 +177,16 @@ def generate_launch_description():
     # only if joystick is connected
     if os.path.exists("/dev/input/js0"):
         print("Enable Joystick")
-        launcher += [teleop_launch]
+        launcher += [
+            # Teleoperation control
+            teleop_launch,
+            # Run Joystick to system_manager node
+            Node(package='ros2_system_manager',
+                 executable='joy2sm',
+                 name='joy2sm',
+                 output='screen'
+                )
+            ]
 
     return LaunchDescription(launcher)
 # EOF
