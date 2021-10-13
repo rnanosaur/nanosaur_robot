@@ -184,6 +184,7 @@ def generate_launch_description():
             Node(package='ros2_system_manager',
                  executable='joy2sm',
                  name='joy2sm',
+                 parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
                  output='screen'
                 )
             ]
