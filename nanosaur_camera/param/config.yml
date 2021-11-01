@@ -33,3 +33,4 @@ nanosaur_camera:
       frameRate: 60.0
       width: 1280
       height: 720
+      flip: "rotate-180"

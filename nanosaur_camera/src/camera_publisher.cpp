@@ -77,6 +77,10 @@ CameraPublisher::CameraPublisher()
   std::string camera_topic_name = "image_raw";
   this->declare_parameter<std::string>("camera.topic", camera_topic_name);
   this->get_parameter("camera.topic", camera_topic_name);
+  // flip camera
+  std::string flip_str = "";
+  this->declare_parameter<std::string>("camera.flip", flip_str);
+  this->get_parameter("camera.flip", flip_str);
   // Initialize publisher
   image_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_topic_name, mVideoQos);
   info_pub_ = this->create_publisher<sensor_msgs::msg::CameraInfo>("camera_info", mVideoQos);
@@ -93,13 +97,14 @@ CameraPublisher::CameraPublisher()
   videoOptions video_options;
 
   std::string codec_str = "unknown";
-  std::string flip_str = "";
 
   if( codec_str.size() != 0 )
     video_options.codec = videoOptions::CodecFromStr(codec_str.c_str());
 
   if( flip_str.size() != 0 )
     video_options.flipMethod = videoOptions::FlipMethodFromStr(flip_str.c_str());
+  
+  RCLCPP_INFO(this->get_logger(), "Flip: %s", flip_str.c_str());
 
   video_options.width = camera_width;
   video_options.height = camera_height;
