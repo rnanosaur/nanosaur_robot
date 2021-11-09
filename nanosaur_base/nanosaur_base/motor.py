@@ -44,12 +44,12 @@ class Motor:
     def set_speed(self, rpm):
         value = rpm / self._rpm
         mapped_value = int(255.0 * (self.alpha * value + self.beta))
-        speed = min(max(abs(mapped_value), 0), 255)
-        self._motor.setSpeed(speed)
         if mapped_value < 0:
             self._motor.run(Adafruit_MotorHAT.BACKWARD)
         else:
             self._motor.run(Adafruit_MotorHAT.FORWARD)
+        speed = min(max(abs(mapped_value), 0), 255)
+        self._motor.setSpeed(speed)
 
     def _release(self):
         """Stops motor by releasing control"""
