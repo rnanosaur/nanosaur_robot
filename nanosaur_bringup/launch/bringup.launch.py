@@ -122,11 +122,13 @@ def generate_launch_description():
             jtop_node,
             # System manager
             system_manager,
-            # Nanosaur camera
-            nanosaur_camera_node,
             # Nanusaur driver motors and display
             nanosaur_base_node
         ]
+    
+    # Nanosaur camera
+    if conf.get("nanosaur_camera", False):
+        launcher += [nanosaur_camera_node]
     
     # include another launch file in the chatter_ns namespace
     # https://docs.ros.org/en/foxy/How-To-Guides/Launch-file-different-formats.html
