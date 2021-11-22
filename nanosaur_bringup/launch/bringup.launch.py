@@ -55,7 +55,8 @@ def generate_launch_description():
     pkg_control = FindPackageShare(package='nanosaur_control').find('nanosaur_control')
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
-    nanosaur_dir = LaunchConfiguration('nanosaur_dir', default=nanosaur_config)
+    # Load locally the configuration
+    loaded_config = load_config(nanosaur_config)
     
     # Load nanosaur configuration and check if are included extra parameters
     conf = load_config(os.path.join(pkg_bringup, 'param', 'robot.yml'))
@@ -84,7 +85,7 @@ def generate_launch_description():
         name='nanosaur_base',
         respawn=True,
         respawn_delay=5,
-        parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
+        parameters=[loaded_config if "nanosaur_base" in loaded_config else {}],
         output='screen'
     )
 
@@ -95,7 +96,7 @@ def generate_launch_description():
         name='nanosaur_camera',
         respawn=True,
         respawn_delay=5,
-        parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
+        parameters=[loaded_config if "nanosaur_camera" in loaded_config else {}],
         output='screen'
     )
 
@@ -112,10 +113,6 @@ def generate_launch_description():
     )
 
     launcher = [
-            DeclareLaunchArgument(
-                'nanosaur_dir',
-                default_value=nanosaur_dir,
-                description='Full path to nanosaur parameter file to load'),
             # Nanosaur description launch
             description_launch,
             # jtop node
@@ -186,7 +183,7 @@ def generate_launch_description():
             Node(package='ros2_system_manager',
                  executable='joy2sm',
                  name='joy2sm',
-                 parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
+                 parameters=[loaded_config if "ros2_system_manager" in loaded_config else {}],
                  output='screen'
                 )
             ]
