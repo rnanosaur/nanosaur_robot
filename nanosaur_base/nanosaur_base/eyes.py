@@ -31,29 +31,43 @@ class eyes:
     
     def __init__(self, node):
         self.node = node
-        # Initialize right Display controller
+        # Initialize right display parameters
+        node.declare_parameter("display.right.enable", True)
+        self.right_enable = bool(node.get_parameter("display.right.enable").value)
         node.declare_parameter("display.right.bus", 0)
         right_bus = int(node.get_parameter("display.right.bus").value)
         node.declare_parameter("display.right.address", 0x3C)
         right_address = int(node.get_parameter("display.right.address").value)
+        # Initialize left display parameters
+        node.declare_parameter("display.left.enable", True)
+        self.left_enable = bool(node.get_parameter("display.left.enable").value)
         node.declare_parameter("display.left.bus", 1)
         left_bus = int(node.get_parameter("display.left.bus").value)
         node.declare_parameter("display.left.address", 0x3C)
         left_address = int(node.get_parameter("display.left.address").value)
         
         timer_period = 0.25
-        # Initialize Displays controller
-        node.get_logger().info(f"Display left bus={left_bus} adr={left_address}")
-        self.display_left = Display(node, i2c_bus=left_bus, i2c_address=left_address, timer_period=timer_period)
-        node.get_logger().info(f"Display right bus={right_bus} adr={right_address}")
-        self.display_right = Display(node, i2c_bus=right_bus, i2c_address=right_address, timer_period=timer_period)
+        # Initialize displays controllers
+        if self.right_enable:
+            node.get_logger().info(f"Display right bus={right_bus} adr={right_address}")
+            self.display_right = Display(node, i2c_bus=right_bus, i2c_address=right_address, timer_period=timer_period)
+        else:
+            node.get_logger().warn(f"Display right disabled")
+        if self.left_enable:
+            node.get_logger().info(f"Display left bus={left_bus} adr={left_address}")
+            self.display_left = Display(node, i2c_bus=left_bus, i2c_address=left_address, timer_period=timer_period)
+        else:
+            node.get_logger().warn(f"Display left disabled")
         
-        self.subscription = node.create_subscription(
-            Eyes,
-            'eyes',
-            self.eyes_callback,
-            10)
-        self.subscription  # prevent unused variable warning
+        if self.right_enable and self.left_enable:
+            self.subscription = node.create_subscription(
+                Eyes,
+                'eyes',
+                self.eyes_callback,
+                10)
+            self.subscription  # prevent unused variable warning
+        else:
+            node.get_logger().warn(f"eyes callback disabled")
     
     def eyes_callback(self, msg):
         x = msg.x
@@ -64,6 +78,8 @@ class eyes:
         x_r = x
         y_l = y
         y_r = y
-        self.display_left.setPoint(x_l, y_l)
-        self.display_right.setPoint(x_r, y_r)
+        if self.right_enable:
+            self.display_right.setPoint(x_r, y_r)
+        if self.left_enable:
+            self.display_left.setPoint(x_l, y_l)
 # EOF
