@@ -59,7 +59,7 @@ class eyes:
         else:
             node.get_logger().warn(f"Display left disabled")
         
-        if self.right_enable and self.left_enable:
+        if self.right_enable or self.left_enable:
             self.subscription = node.create_subscription(
                 Eyes,
                 'eyes',
