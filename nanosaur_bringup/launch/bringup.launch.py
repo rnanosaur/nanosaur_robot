@@ -55,8 +55,16 @@ def generate_launch_description():
     pkg_control = FindPackageShare(package='nanosaur_control').find('nanosaur_control')
 
     nanosaur_config = os.path.join(pkg_bringup, 'param', 'nanosaur.yml')
+    config_common_path = LaunchConfiguration('config_common_path')
+
+    declare_config_common_path_cmd = DeclareLaunchArgument(
+        'config_common_path',
+        default_value=nanosaur_config,
+        description='Path to the `nanosaur.yml` file.')
+
+    
     # Load locally the configuration
-    loaded_config = load_config(nanosaur_config)
+    # loaded_config = load_config(nanosaur_config)
     
     # Load nanosaur configuration and check if are included extra parameters
     conf = load_config(os.path.join(pkg_bringup, 'param', 'robot.yml'))
@@ -85,7 +93,7 @@ def generate_launch_description():
         name='nanosaur_base',
         respawn=True,
         respawn_delay=5,
-        parameters=[loaded_config if "nanosaur_base" in loaded_config else {}],
+        parameters=[config_common_path],
         output='screen'
     )
 
@@ -96,7 +104,7 @@ def generate_launch_description():
         name='nanosaur_camera',
         respawn=True,
         respawn_delay=5,
-        parameters=[loaded_config if "nanosaur_camera" in loaded_config else {}],
+        parameters=[config_common_path],
         output='screen'
     )
 
@@ -112,20 +120,23 @@ def generate_launch_description():
         ]
     )
 
-    launcher = [
-            # Nanosaur description launch
-            description_launch,
-            # jtop node
-            jtop_node,
-            # System manager
-            system_manager,
-            # Nanusaur driver motors and display
-            nanosaur_base_node
-        ]
+    # Define LaunchDescription variable and return it
+    ld = LaunchDescription()
+    
+    ld.add_action(declare_config_common_path_cmd)
+    # Nanosaur description launch
+    ld.add_action(description_launch)
+    # jtop node
+    ld.add_action(jtop_node)
+    # System manager
+    ld.add_action(system_manager)
+    # Nanusaur driver motors and display
+    ld.add_action(nanosaur_base_node)
+
     
     # Nanosaur camera
     if conf.get("nanosaur_camera", False):
-        launcher += [nanosaur_camera_node]
+        ld.add_action(nanosaur_camera_node)
     
     # include another launch file in the chatter_ns namespace
     # https://docs.ros.org/en/foxy/How-To-Guides/Launch-file-different-formats.html
@@ -142,7 +153,7 @@ def generate_launch_description():
     if conf.get("no_twist_mux", False):
         print("Disable twist-mux")
     else:
-        launcher += [twist_control_launch]
+        ld.add_action(twist_control_launch)
 
     joy2eyes_node = Node(
         package='nanosaur_base',
@@ -156,7 +167,7 @@ def generate_launch_description():
     # - Eyes bridge
     if conf.get("debug", False):
         print("DEBUG variable exist - Load extra nodes")
-        launcher += [joy2eyes_node]
+        ld.add_action(joy2eyes_node)
 
     # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
     # include another launch file in the chatter_ns namespace
@@ -172,21 +183,20 @@ def generate_launch_description():
             ]
     )
 
+    system_manager_node = Node(package='ros2_system_manager',
+                               executable='joy2sm',
+                               name='joy2sm',
+                               parameters=[config_common_path],
+                               output='screen')
+
     # teleoperation joystick nanosaur
     # only if joystick is connected
     if os.path.exists("/dev/input/js0"):
         print("Enable Joystick")
-        launcher += [
-            # Teleoperation control
-            teleop_launch,
-            # Run Joystick to system_manager node
-            Node(package='ros2_system_manager',
-                 executable='joy2sm',
-                 name='joy2sm',
-                 parameters=[loaded_config if "ros2_system_manager" in loaded_config else {}],
-                 output='screen'
-                )
-            ]
+        # Teleoperation control
+        ld.add_action(teleop_launch)
+        # Run Joystick to system_manager node
+        ld.add_action(system_manager_node)
 
-    return LaunchDescription(launcher)
+    return ld
 # EOF
