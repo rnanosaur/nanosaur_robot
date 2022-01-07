@@ -177,6 +177,8 @@ def generate_launch_description():
                                parameters=[config_common_path],
                                output='screen')
 
+
+    print(f"----- cover_type: {cover_type} -----")
     # Define LaunchDescription variable and return it
     ld = LaunchDescription()
 
