@@ -168,6 +168,10 @@ class Display:
         else:
             self.draw.text((0, -10), self.message[0], font=self.font_wide, fill=255)
 
+    def restartDisplay(self):
+        if self.counter == 0:
+            self.status_display = DisplayStatus.RUNNING
+
     def standby(self):
         # Clean display
         self.status_display = DisplayStatus.SLEEP 

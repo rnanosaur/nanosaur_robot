@@ -137,6 +137,8 @@ class NanoSaur(Node):
         return [rr, rl]
 
     def drive_callback(self, msg):
+        # awake displays
+        self.eyes.ping()
         # Store linear velocity and angular velocity
         v = msg.linear.x
         w = msg.angular.z

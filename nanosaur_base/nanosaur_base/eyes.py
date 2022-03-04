@@ -92,11 +92,19 @@ class eyes:
         else:
             node.get_logger().warn(f"eyes callback disabled")
 
+    def ping(self):
+        if self.right_enable:
+            self.display_right.restartDisplay()
+        if self.left_enable:
+            self.display_left.restartDisplay()
+
     def message_diagnostic(self, req, resp):
         # Reset timer display sleep
         self.timer.reset()
-        self.display_right.showDiagnostic(timeout=5)
-        self.display_left.showDiagnostic(timeout=5)
+        if self.right_enable:
+            self.display_right.showDiagnostic(timeout=5)
+        if self.left_enable:
+            self.display_left.showDiagnostic(timeout=5)
         return resp
 
     def message_service(self, req, resp):
@@ -133,9 +141,10 @@ class eyes:
         return resp
 
     def timeout_callback(self):
-        
-        self.display_right.standby()
-        self.display_left.standby()
+        if self.right_enable:
+            self.display_right.standby()
+        if self.left_enable:
+            self.display_left.standby()
         self.node.get_logger().info(f"Timeout!")
         
 
