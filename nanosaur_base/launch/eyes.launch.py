@@ -39,7 +39,7 @@ def generate_launch_description():
         package='nanosaur_base',
         executable='nanosaur_base',
         name='nanosaur_base',
-        parameters=[nanosaur_dir] if os.path.isfile(nanosaur_config) else [],
+        parameters=[nanosaur_dir],
         output='screen'
     )
 
