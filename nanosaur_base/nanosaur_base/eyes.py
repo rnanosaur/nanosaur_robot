@@ -35,6 +35,7 @@ class DisplayType(Enum):
     LEFT = 1
     RIGHT = 2
 
+DISPLAY_RATE = 5
 class eyes:
     
     def __init__(self, node):
@@ -53,19 +54,20 @@ class eyes:
         left_bus = int(node.get_parameter("display.left.bus").value)
         node.declare_parameter("display.left.address", 0x3C)
         left_address = int(node.get_parameter("display.left.address").value)
-        node.declare_parameter("display.sleep", 120)
+        node.declare_parameter("display.sleep", 60 * 10)
         sleep_time = int(node.get_parameter("display.sleep").value)
+        node.declare_parameter("display.splash", 3)
+        splash_timeout = int(node.get_parameter("display.splash").value)
         
-        display_rate = 5
         # Initialize displays controllers
         if self.right_enable:
-            node.get_logger().info(f"Display right bus={right_bus} adr={right_address} rate={display_rate}hz")
-            self.display_right = Display(node, "right", i2c_bus=right_bus, i2c_address=right_address, rate=display_rate)
+            node.get_logger().info(f"Display right bus={right_bus} adr={right_address} rate={DISPLAY_RATE}hz")
+            self.display_right = Display(node, "right", i2c_bus=right_bus, i2c_address=right_address, rate=DISPLAY_RATE)
         else:
             node.get_logger().warn(f"Display right disabled")
         if self.left_enable:
-            node.get_logger().info(f"Display left bus={left_bus} adr={left_address} Rate={display_rate}hz")
-            self.display_left = Display(node, "left", i2c_bus=left_bus, i2c_address=left_address, rate=display_rate)
+            node.get_logger().info(f"Display left bus={left_bus} adr={left_address} Rate={DISPLAY_RATE}hz")
+            self.display_left = Display(node, "left", i2c_bus=left_bus, i2c_address=left_address, rate=DISPLAY_RATE)
         else:
             node.get_logger().warn(f"Display left disabled")
             
@@ -73,11 +75,11 @@ class eyes:
         self.timer = self.node.create_timer(sleep_time, self.timeout_callback)
         
         # Load spash screen
-        splash_timeout = 3
-        message = [f"nano", "saur"]
-        middle_index = len(message)//2
-        self.display_right.setMessage(message[middle_index:], MessageType.WIDE, timeout=splash_timeout)
-        self.display_left.setMessage(message[:middle_index], MessageType.WIDE, timeout=splash_timeout)
+        if splash_timeout > 0:
+            message = [f"nano", "saur"]
+            middle_index = len(message)//2
+            self.display_right.setMessage(message[middle_index:], MessageType.WIDE, timeout=splash_timeout)
+            self.display_left.setMessage(message[:middle_index], MessageType.WIDE, timeout=splash_timeout)
         # Service
         self.message_srv = node.create_service(EyeMessage, 'nanosaur/message', self.message_service)
         self.message_srv = node.create_service(Empty, 'nanosaur/diagnostic', self.message_diagnostic)

@@ -36,11 +36,13 @@ from PIL import ImageFont
 class MessageType(Enum):
     FULL = 0
     WIDE = 1
+    TWO_LINES = 2
 
 class DisplayStatus(Enum):
     SLEEP = 0
     RUNNING = 1
     MESSAGE = 2
+    ANIMATION = 3
 
 # Install open-sans
 # apt install fonts-open-sans
@@ -81,6 +83,7 @@ class Display:
         # Load default font
         try:
             self.font_default = ImageFont.truetype(FONT_NAME, 11)
+            self.font_two_lines = ImageFont.truetype(FONT_NAME_WIDE, 24)
             self.font_wide = ImageFont.truetype(FONT_NAME_WIDE, 54)
         except OSError:
             node.get_logger().error(f"Fail load {FONT_NAME}. Loaded default font")
@@ -127,15 +130,79 @@ class Display:
         self.center_y = (y / 100.) * (self.height) / 2.
 
     def showDiagnostic(self, timeout=3):
-        self.setMessage(self.diagnostic, MessageType.FULL, timeout=timeout)
+        self.setMessage(self.diagnostic, MessageType.FULL, timeout)
 
-    def setMessage(self, message, type, timeout=3.0):
+    def restartDisplay(self):
+        if self.status_display == DisplayStatus.SLEEP:
+            self.status_display = DisplayStatus.RUNNING
+
+    def standby(self, timeout=3):
+        self.loadAnimation(self._animation_zzz, timeout, next_status=DisplayStatus.SLEEP)
+
+    def setMessage(self, message, type, timeout):
         self.message = message
-        self.timeout_message = timeout
         self.type = MessageType(type)
+        self.loadAnimation(self._print_message, timeout)
+
+    def loadAnimation(self, animation_function, timeout, next_status=DisplayStatus.RUNNING):
+        self.animation_function = animation_function
+        self.timeout_message = timeout
         self.counter = 0
-        self.status_display = DisplayStatus.MESSAGE
-   
+        self.next_status = next_status
+        self.status_display = DisplayStatus.ANIMATION
+
+    def display_callback(self):
+        if self.status_display == DisplayStatus.ANIMATION:
+            # Run function
+            self.animation_function()
+            # increase counter
+            self.counter += self.timer_period
+            # Reset counter
+            if self.counter > self.timeout_message:
+                # Move to next status
+                self.status_display = self.next_status
+                # reset counter
+                self.counter = 0
+        elif self.status_display == DisplayStatus.RUNNING:
+            self._print_eye()
+        elif self.status_display == DisplayStatus.MESSAGE:
+            self._print_message()
+        else:
+            # Draw a black filled box to clear the image.
+            self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)  
+        # Show image on screen
+        self.disp.image(self.image)
+        self.disp.display()
+
+    def _animation_zzz(self):
+        # Draw a black filled box to clear the image.
+        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0) 
+        # Write zzz
+        self.draw.text((70, -10), "Z", font=self.font_wide, fill=255)
+        self.draw.text((50, 25), "Z", font=self.font_two_lines, fill=255)
+        self.draw.text((40, 40), "Z", font=self.font_default, fill=255)
+
+    def _print_message(self):
+        # Draw a black filled box to clear the image.
+        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
+        # Draw with type message
+        if self.type == MessageType.FULL:
+            # Draw all lines
+            step = -2
+            for message in self.message:
+                (font_width, font_height) = self.font_default.getsize(message)
+                self.draw.text((0, step), message, font=self.font_default, fill=255)
+                step += font_height
+        elif self.type == MessageType.TWO_LINES:
+            # Draw all lines
+            step = -2
+            for message in self.message:
+                (font_width, font_height) = self.font_two_lines.getsize(message)
+                self.draw.text((0, step), message, font=self.font_two_lines, fill=255)
+                step += font_height
+        else:
+            self.draw.text((0, -10), self.message[0], font=self.font_wide, fill=255)
+
     def _print_eye(self):
         center_x = self.center_x + self.width / 2.
         center_y = self.center_y + self.height / 2.
@@ -154,45 +221,6 @@ class Display:
         #self.draw.line((self.width/2, 0, self.width/2, self.height), fill=255)
         #self.draw.line((self.width * 3/4, 0, self.width* 3/4, self.height), fill=255)
 
-    def _print_message(self):
-        # Draw a black filled box to clear the image.
-        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
-        # Draw with type message
-        if self.type == MessageType.FULL:
-            # Draw all lines
-            step = -2
-            for idx, message in enumerate(self.message):
-                (font_width, font_height) = self.font_default.getsize(message)
-                self.draw.text((0, step), message, font=self.font_default, fill=255)
-                step += font_height
-        else:
-            self.draw.text((0, -10), self.message[0], font=self.font_wide, fill=255)
-
-    def restartDisplay(self):
-        if self.counter == 0:
-            self.status_display = DisplayStatus.RUNNING
-
-    def standby(self):
-        # Clean display
-        self.status_display = DisplayStatus.SLEEP 
-
-    def display_callback(self):
-        if self.status_display == DisplayStatus.MESSAGE or self.counter > 0:
-            self._print_message()
-            self.counter += self.timer_period
-            # Reset counter
-            if self.counter > self.timeout_message:
-                self.status_display = DisplayStatus.RUNNING
-                self.counter = 0
-        elif self.status_display == DisplayStatus.RUNNING:
-            self._print_eye()
-        else:
-            # Draw a black filled box to clear the image.
-            self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)  
-        # Show image on screen
-        self.disp.image(self.image)
-        self.disp.display()
-    
     def _close(self):
         # Draw a black filled box to clear the image.
         self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
