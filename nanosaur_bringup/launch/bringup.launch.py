@@ -63,8 +63,13 @@ def generate_launch_description():
 
     # Load namespace from robot.yml
     namespace_conf = os.getenv("HOSTNAME") if conf.get("multirobot", False) else ""
-    # Load cover_type from robot.yml
-    cover_type_conf = conf.get("cover_type", 'fisheye')
+    # Load cover_type
+    if "cover_type" in conf:
+        cover_type_conf = conf.get("cover_type", 'fisheye')
+        print(f"Load cover_type from robot.xml: {cover_type_conf}")
+    else:
+        cover_type_conf = os.getenv("COVER_TYPE", 'fisheye')
+        print(f"Load cover_type from ENV: {cover_type_conf}")
 
     config_common_path = LaunchConfiguration('config_common_path')
     namespace = LaunchConfiguration('namespace')
@@ -105,17 +110,6 @@ def generate_launch_description():
         namespace=namespace,
         executable='nanosaur_base',
         name='nanosaur_base',
-        respawn=True,
-        respawn_delay=5,
-        parameters=[config_common_path],
-        output='screen'
-    )
-
-    nanosaur_camera_node = Node(
-        package='nanosaur_camera',
-        namespace=namespace,
-        executable='nanosaur_camera',
-        name='nanosaur_camera',
         respawn=True,
         respawn_delay=5,
         parameters=[config_common_path],
@@ -196,10 +190,6 @@ def generate_launch_description():
     ld.add_action(system_manager)
     # Nanusaur driver motors and display
     ld.add_action(nanosaur_base_node)
-
-    # Nanosaur camera
-    if conf.get("nanosaur_camera", False):
-        ld.add_action(nanosaur_camera_node)
 
     # Twist control launcher
     if conf.get("no_twist_mux", False):
