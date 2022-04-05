@@ -62,7 +62,8 @@ def generate_launch_description():
     conf = load_config(os.path.join(pkg_bringup, 'param', 'robot.yml'))
 
     # Load namespace from robot.yml
-    namespace_conf = os.getenv("HOSTNAME") if conf.get("multirobot", False) else ""
+    namespace_conf = os.getenv("HOSTNAME") if conf.get(
+        "multirobot", False) else "nanosaur"
     # Load cover_type
     if "cover_type" in conf:
         cover_type_conf = conf.get("cover_type", 'fisheye')
@@ -94,7 +95,8 @@ def generate_launch_description():
         package='jetson_stats_wrapper',
         namespace=namespace,
         executable='jtop',
-        name='jtop'
+        name='jtop',
+        remappings=[('diagnostics', '/diagnostics')]
     )
 
     # System manager
@@ -156,21 +158,22 @@ def generate_launch_description():
         actions=[
             # push-ros-namespace to set namespace of included nodes
             PushRosNamespace(namespace),
+            # teleoperation launcher
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     [pkg_control, '/launch/teleop.launch.py']),
-                launch_arguments={'joy_vel': 'joy_vel',
-                                  'config_filepath': os.path.join(pkg_control, 'param', 'ps3.nanosaur.yml')}.items()
+                launch_arguments={'joy_vel': f"/{namespace_conf}/joy_vel",
+                                  'config_filepath': os.path.join(pkg_control, 'config', 'ps3.nanosaur.yml')}.items()
             )
         ]
     )
 
     system_manager_node = Node(package='ros2_system_manager',
+                               namespace=namespace,
                                executable='joy2sm',
                                name='joy2sm',
                                parameters=[config_common_path],
                                output='screen')
-
 
     print(f"----- cover_type: {cover_type} -----")
     # Define LaunchDescription variable and return it
