@@ -158,6 +158,7 @@ def generate_launch_description():
                                executable='joy2sm',
                                name='joy2sm',
                                parameters=[config_common_path],
+                               remappings=[('shutdown', f'/{namespace_conf}/shutdown')],
                                output='screen')
 
 
