@@ -146,11 +146,36 @@ def generate_launch_description():
 
     joy2eyes_node = Node(
         package='nanosaur_base',
-        namespace=namespace,
+        namespace="teleop",
         executable='joy2eyes',
         name='joy2eyes',
+        remappings=[('eyes', f'/{namespace_conf}/eyes')],
         output='screen'
     )
+
+    system_manager_node = Node(package='ros2_system_manager',
+                               namespace="teleop",
+                               executable='joy2sm',
+                               name='joy2sm',
+                               parameters=[config_common_path],
+                               output='screen')
+
+
+    teleop_extra_node_actions=[
+        # push-ros-namespace to set namespace of included nodes
+        PushRosNamespace(namespace),
+        # nanosaur twist launch
+        system_manager_node
+    ]
+
+    # Extra Debug packages
+    # - Eyes bridge
+    if conf.get("debug", False):
+        print("DEBUG variable exist - Load extra nodes")
+        teleop_extra_node_actions +=[joy2eyes_node]
+    
+    # include another launch file in nanosaur namespace
+    teleop_extra_nodes_launch = GroupAction(actions=teleop_extra_node_actions)
 
     # https://answers.ros.org/question/306935/ros2-include-a-launch-file-from-a-launch-file/
     # include another launch file in the chatter_ns namespace
@@ -167,13 +192,6 @@ def generate_launch_description():
             )
         ]
     )
-
-    system_manager_node = Node(package='ros2_system_manager',
-                               namespace=namespace,
-                               executable='joy2sm',
-                               name='joy2sm',
-                               parameters=[config_common_path],
-                               output='screen')
 
     print(f"----- cover_type: {cover_type} -----")
     # Define LaunchDescription variable and return it
@@ -200,12 +218,6 @@ def generate_launch_description():
     else:
         ld.add_action(twist_control_launch)
 
-    # Extra Debug packages
-    # - Eyes bridge
-    if conf.get("debug", False):
-        print("DEBUG variable exist - Load extra nodes")
-        ld.add_action(joy2eyes_node)
-
     # teleoperation joystick nanosaur
     # only if joystick is connected
     if os.path.exists("/dev/input/js0"):
@@ -213,7 +225,7 @@ def generate_launch_description():
         # Teleoperation control
         ld.add_action(teleop_launch)
         # Run Joystick to system_manager node
-        ld.add_action(system_manager_node)
+        ld.add_action(teleop_extra_nodes_launch)
 
     return ld
 # EOF
